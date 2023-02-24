@@ -392,7 +392,7 @@ else{
 
 void receiveData(int byteCount) { //function to recieve data from pi
   setpoint = int(Wire.read()); //reading setpoint from pi
-  Serial.print(setpoint);
+  Serial.println("recievedData");
   setpoint = int(setpoint - '0');
 //  while (Wire.available()) { //loop which places data from pi into data list
 //    data[i] = Wire.read();
@@ -409,5 +409,5 @@ void sendData(){
   byte high = byte(count >> 8); //giving variable high second 8 bits
   Wire.write(high); //sends high 8 bits
   Wire.write(low); //sends low 8 bits
-  delay(100);
+  Serial.print("sentData");
 }
