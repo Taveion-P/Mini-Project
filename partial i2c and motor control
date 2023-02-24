@@ -14,6 +14,8 @@
 #define pin8 8
 #define nD2 4
 
+#define resetPin 13
+
 //creates global variables that will be used in the future.
 unsigned long previousmicros = 0;
 boolean movingLeft=false;
@@ -47,8 +49,9 @@ double pi = 3.14159;
 double posX=0;
 double posY=0;
 double theta=0;
-// end entered code from git
 
+
+int setpoint = 0;
 
 //transfer function values
 
@@ -64,7 +67,7 @@ double previousAngularPosition = 0;
 double currentAngularPosition = 0;
 
 //the targetAngularPosition will be changed via the Aruco camera to 0, pi/2, pi, or 3pi/2
-double targetAngularPosition = (2*pi);
+double targetAngularPosition = (0);
 
 double angularVelocity = 0; //use the previous angularPosition and compare with the current angular position as well as the interval rate (time over which the position has changed)
 //in order to determine the angularVelocity of the wheel
@@ -88,6 +91,8 @@ void setup() {
 
 
   //defines the different pins on the Arduino as inputs to read the values of the encoder.
+  pinMode(resetPin, INPUT_PULLUP);
+  
   pinMode(CLK_A, INPUT);
   pinMode(DT_B, INPUT);
 
@@ -167,10 +172,14 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
+  if(digitalRead(resetPin) == 0){
+    count = 0;
+  }
 unsigned long currentmicros = micros();
 
 //using the given sampling rate only sample when the rate has occurred
 if (currentmicros - previousmicros >= interval) {
+targetAngularPosition = setpoint;
 
 //Constants for the controller (change to best fit the system)
 float Kp = 1;
@@ -382,10 +391,9 @@ void receiveData(int byteCount) { //function to recieve data from pi
 //    data[i] = Wire.read();
 //    Serial.print(data[i]);
 //    Serial.print(' ');
-//    i++;
+//    i++;t
 //    lengthData = i;
 //  }
-  return setpoint;
 }
 
 // callback for sending data
