@@ -179,7 +179,14 @@ unsigned long currentmicros = micros();
 
 //using the given sampling rate only sample when the rate has occurred
 if (currentmicros - previousmicros >= interval) {
-targetAngularPosition = setpoint;
+
+switch(setpoint){
+  case 1: targetAngularPosition = 0; break;
+  case 2: targetAngularPosition = pi/2; break;
+  case 3: targetAngularPosition = pi; break;
+  case 4: targetAngularPosition = 3*pi/2; break;
+}
+
 
 //Constants for the controller (change to best fit the system)
 float Kp = 1;
