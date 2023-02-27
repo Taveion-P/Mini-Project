@@ -45,7 +45,7 @@ double posX=0;
 double posY=0;
 double theta=0;
 
-int setpoint = 0;
+byte setpoint = 0;
 
 void setup() {
   Serial.begin(115200); // start serial for output
@@ -182,16 +182,13 @@ double toRadians(int count){
 }
 
 void receiveData(int byteCount) { //function to recieve data from pi
-  setpoint = int(Wire.read()); //reading setpoint from pi
-  Serial.print(setpoint);
-  setpoint = int(setpoint - '0');
-//  while (Wire.available()) { //loop which places data from pi into data list
-//    data[i] = Wire.read();
-//    Serial.print(data[i]);
-//    Serial.print(' ');
-//    i++;
-//    lengthData = i;
-//  }
+  if (!Wire.read()) setpoint = Wire.read(); //reading setpoint from pi
+  Serial.print("Setpoint = ");
+  Serial.println(setpoint);
+  
+  #if i2cdebug //assist in debugging
+  Serial.println(" ");
+  #endif
 }
 
 // callback for sending data
