@@ -23,6 +23,8 @@
 #define M2DIR 8
 #define nD2 4
 
+#define i2cdebug 1
+
 //pin for a button that can reset the current motor position to be the starting zero position.
 #define resetPin 13
 
@@ -65,7 +67,7 @@ double posY=0;
 double theta=0;
 
 //setpoint that is read over i2c communcation that will tell the motor which position to move to. (will range from 1-4)
-int setpoint = 0;
+byte setpoint = 0;
 
 
 //*****
@@ -97,7 +99,7 @@ unsigned long previousmicros = 0;
 void setup() {
 
   // Starts Serial to be able to print out and read encoder values
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // initialize i2c as slave
   Wire.begin(SLAVE_ADDRESS);
@@ -336,8 +338,13 @@ void powerMotor(int direction, int setPWM){
 
 //function to recieve data from pi
 void receiveData(int byteCount) { 
-  setpoint = int(Wire.read()); //reading setpoint from pi
-  setpoint = int(setpoint - '0');
+  if (!Wire.read()) setpoint = Wire.read(); //reading setpoint from pi
+  Serial.print("Setpoint = ");
+  Serial.println(setpoint);
+  
+  #if i2cdebug //to assist in debugging
+  Serial.println(" ");
+  #endif
 }
 
 // callback for sending data
