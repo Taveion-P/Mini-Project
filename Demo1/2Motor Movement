@@ -167,6 +167,10 @@ void setup() {
 
 
 void loop() {
+
+  //checks whether or not we wish to test the rotation capabilities of the robot
+  
+  bool performRotation = true;
   //checks every loop to see if the button is reset to reset the count to 0. 
   if(digitalRead(resetPin) == 0){
     count = 0;
@@ -253,6 +257,10 @@ void loop() {
     if(currentmicros - previousmicros >= interval){
       Serial.print("ERROR: RUN TIME HAS EXCEEDED SAMPLING TIME");
     }
+   
+   
+   //BELOW IS THE CODE FOR PERFORMING ROTATIONS
+   if(performRotation == 1){
     
     //Serial.println("END SAMPLE PERIOD");
   }
