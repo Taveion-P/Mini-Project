@@ -61,6 +61,7 @@ double thetaRightOld=0;
 //defines constant variables that will be used in the future.
 double const radius=0.05;
 double const b = 0.1;
+double const rotations = 2.5522;
 
 //defines and sets starting positions for the robot.
 double posX=0;
@@ -76,7 +77,9 @@ byte setpoint = 0;
 //*****
 
 float previousError1 = 0;
+float previousError2 = 0;
 float integralError1 = 0;
+float integralError2 = 0;
 
 //use previous micros starting at zero to serve as a starting point for the sample rate of the main program
 int interval = 5000; //use as the sample rate (the amount of time that the program should wait between sampling values)
@@ -85,10 +88,19 @@ int interval = 5000; //use as the sample rate (the amount of time that the progr
 double previousAngularPosition1 = 0;
 double currentAngularPosition1 = 0;
 
+double previousAngularPosition2 = 0;
+double currentAngularPosition2 = 0;
+
 //the targetAngularPosition will be changed via the Aruco camera to 0, pi/2, pi, or 3pi/2
 double targetAngularPosition1 = -6.64*2*PI;
+double targetAngularPosition2 = -6.64*2*PI;
 
-double angularVelocity1 = 0; //use the previous angularPosition and compare with the current angular position as well as the interval rate (time over which the position has changed)
+//the targetOfRotation will be input via code before demonstration
+double targetOfRotation = 0;
+
+double angularVelocity1 = 0;
+double angularVelocity2 = 0;
+//use the previous angularPosition and compare with the current angular position as well as the interval rate (time over which the position has changed)
 //in order to determine the angularVelocity of the wheel
 
 unsigned long previousmicros = 0;
@@ -186,37 +198,51 @@ void loop() {
 
     //reads the current angular postion in radians
     currentAngularPosition1 = toRadians(count);
+    currentAngularPosition2 = toRadians(count2);
 
     //current ERROR (distance between desired pos and current pos)
     float error1 = targetAngularPosition1 - currentAngularPosition1;
+    float error2 = targetAngularPosition2 - currentAngularPosition2;
 
     //derivative of the error (not used or needed in this iteration)
-    //float derivativeError = (error - previousError)/(changeInTime);
+    //float derivativeError1 = (error1 - previousError1)/(changeInTime);
+    //float derivativeError2 = (error2 - previousError2)/(changeInTime);
+    
 
     //integral of the error
     integralError1 = integralError1 + error1*changeInTime;
+    integralError2 = integralError2 + error2*changeInTime;
 
     //computation of the integral and derivative terms u(t) using the previously defined values
     float ut1 = Kp1*error1 + Ki1*integralError1;
+    float ut2 = Kp2*error2 + Ki2*integralError2;
 
     //power the motor with speed and direction!
     //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
     float pwr1 = fabs(ut1 * 255);
+    float pwr2 = fabs(ut2 * 255);
     //pwr cannot exceed 255
+ 
     if(pwr1 > 255)
       pwr1 = 255;
+    if(pwr2 > 255)
+      pwr2 = 255;
     //set an initial direction for the motor to move
     int dir1 = 1;
+    int dir2 = 1;
     //direction is forward (1) if ut > 0 and direction is backward/reverse if ut < 0
     if(ut1 < 0)
       dir1= -1;
+    if(ut2 < 0)
+      dir2 = -1;
     
     //call the motor function and pass the direction the motor should move and the PWM power to be supplied
     powerMotor1(dir1, pwr1);
-    powerMotor2(dir1, pwr1);
+    powerMotor2(dir2, pwr2);
 
     //current error becomes previous error as the loop finishes
     previousError1 = error1;
+    previousError2 = error2;
 
     //outputs serveral values for debugging and simulation needs.
     output();
@@ -354,6 +380,30 @@ void powerMotor2(int direction, int setPWM){
   else if(direction == -1){ 
     //motor moves wheel backward
     digitalWrite(M2DIR, LOW);
+  }
+
+}
+
+
+//used in order to rotate the robot motors should always move in opposite directions with the directions based off the targetedAngularRotation
+void rotateRobot(int direction1, int setPWM1, int direction2, int setPWM2){
+
+  analogWrite(M1PWM, setPWM);
+
+  if(direction1 == 1){
+   digitalWrite(M1DIR, HIGH);
+  }
+  else if (direction1 == -1){
+   digitalWrite(M1DIR, LOW);
+  }
+
+  analogWrite(M2PWM, setPWM);
+
+  if(direction2 == 1){
+    digitalWrite(M2DIR, HIGH);
+  }
+  else if (direction2 == -1){
+  digitalWrite(M2DIR, LOW);
   }
 
 }
