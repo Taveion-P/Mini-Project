@@ -195,6 +195,10 @@ void loop() {
     float const Kp1 = 1;
     float const Kd1 = 0;
     float const Ki1 = 0.5;
+    
+    float const Kp2 = 1;
+    float const Kd2 = 0;
+    float const Ki2 = 0.5;
 
     //find the change in time in seconds
     float changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
