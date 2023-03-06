@@ -93,7 +93,7 @@ double currentAngularPosition2 = 0;
 
 //the targetAngularPosition will be changed via the Aruco camera to 0, pi/2, pi, or 3pi/2
 double targetAngularPosition1 = -6.64*2*PI;
-double targetAngularPosition2 = -6.64*2*PI;
+double targetAngularPosition2 = 6.64*2*PI;
 
 //the targetOfRotation will be input via code before demonstration
 double targetOfRotation = 0;
@@ -254,7 +254,7 @@ void loop() {
 
     //outputs serveral values for debugging and simulation needs.
     output();
-    Serial.println(pwr1);
+    Serial.println(pwr2);
 
     //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
     //in the case that it has exceeded the sampling rate print an error
@@ -332,21 +332,21 @@ void output() {
   //prints out all the associated values to the terminal
   Serial.print( micros() );
   Serial.print("\t");
-  Serial.print(velocityLeft,2);
-  Serial.print("\t");
-  /*Serial.print(velocityRight,2);  
-  Serial.print("\t");
-  Serial.print(posX,3);
-  Serial.print("\t");
-  Serial.print(posY,3);
-  Serial.print("\t"); 
-  Serial.print(theta,3);
-  Serial.print("\t");*/
-  Serial.print(count);
-  Serial.print("\t");  
-  //Serial.println(count2);
+  //Serial.print(velocityLeft,2);
+  //Serial.print("\t");
+  //Serial.print(velocityRight,2);  
+  //Serial.print("\t");
+  //Serial.print(posX,3);
+  //Serial.print("\t");
+  //Serial.print(posY,3);
   //Serial.print("\t"); 
-  Serial.print(toRadians(count));
+  //Serial.print(theta,3);
+  //Serial.print("\t");*/
+  //Serial.print(count);
+  //Serial.print("\t");  
+  Serial.println(count2);
+  Serial.print("\t"); 
+  Serial.print(toRadians(count2));
   Serial.print("\t");
   
 }
