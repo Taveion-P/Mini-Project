@@ -28,6 +28,11 @@ lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows)
 lcd.clear()
 lcd.color = [0, 0, 0]
 
+#Defining Global Variables
+    #varible to keep track of the quadrent the marker was last in
+quad=0
+    #Flag varible to keep track of when the quadrant is changed
+change_quad=0
 
 def writeNumber(value):
     #bus.write_byte(address, value)
@@ -51,7 +56,8 @@ def readBlock(length = 2): #function to read block of data from arduino
 
 #Function that handles the detection of the aruco markers
 def aruco(pic,w,l):
-    quad=0
+    current_quad=0
+    ang=0
     #generate a grayscale image from the given input file
     pic=cv2.cvtColor(pic,cv2.COLOR_BGR2GRAY)
     
@@ -87,9 +93,10 @@ def aruco(pic,w,l):
             cv2.putText(pic,str(i),(t_left[0],t_left[1]-15),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,255),2)
             
             #Calculation the distance and degree offset
-            """fov=53.5/2
+            fov=53.5/2
             ratio=((w-(0.5*(t_right[0]+t_left[0])))/w)
-            cv2.putText(pic,str(fov*ratio),(t_right[0],t_right[1]-15),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,255),2)"""
+            ang=int(ratio*fov)
+            cv2.putText(pic,str(ang),(t_right[0],t_right[1]-15),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,255),2)
             
             #Finding Quadrent
             
@@ -98,21 +105,28 @@ def aruco(pic,w,l):
             cy=int((t_left[1]+b_right[1])*0.5)
             #If to find Quadrent
             if cx < (w) and cy < (l):
-                quad=2
+                 current_quad=2
             elif cx > (w) and cy > (l):
-                quad=4
+                 current_quad=4
             elif cx < (w) and cy > (l):
-                quad=3
+                 current_quad=3
             elif cx > (w) and cy < (l):
-                quad=1
+                 current_quad=1
                 
-            
+            #Update global quad and change quad flag variable
+            global quad,change_quad   
+            if current_quad != quad:
+                quad=current_quad
+                change_quad=1
             
     #Return processed picture and the quadrent that the object is in
-    return(pic,quad)
+    return(pic,quad,ang)
 
 #Start video and detection
 def start():
+#Define global variables
+    global quad,change_quad
+
 #Start and Calibrate Video Capture
     cap=cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FPS,24)
@@ -150,8 +164,10 @@ def start():
         else:
             continue
 
-        writeNumber(a[1]) #writes quadrant of marker to arduino
-        time.sleep(1)
+        if change_quad:
+            writeNumber(a[1]) #writes quadrant of marker to arduino
+            time.sleep(1)
+            change_quad=0
 
         currentPosition = readBlock() #reads in current position from arduino
 
