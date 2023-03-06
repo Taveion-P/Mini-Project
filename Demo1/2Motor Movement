@@ -262,13 +262,7 @@ void loop() {
       Serial.print("ERROR: RUN TIME HAS EXCEEDED SAMPLING TIME");
     }
    
-   
-   //BELOW IS THE CODE FOR PERFORMING ROTATIONS
-   if(performRotation == 1){
-    
-    //Serial.println("END SAMPLE PERIOD");
   }
-
 }
 
 void A_ISR(){
@@ -400,22 +394,22 @@ void powerMotor2(int direction, int setPWM){
 //used in order to rotate the robot motors should always move in opposite directions with the directions based off the targetedAngularRotation
 void rotateRobot(int direction1, int setPWM1, int direction2, int setPWM2){
 
-  analogWrite(M1PWM, setPWM);
+  analogWrite(M1PWM, setPWM1);
 
   if(direction1 == 1){
-   digitalWrite(M1DIR, HIGH);
+    digitalWrite(M1DIR, HIGH);
   }
   else if (direction1 == -1){
-   digitalWrite(M1DIR, LOW);
+    digitalWrite(M1DIR, LOW);
   }
 
-  analogWrite(M2PWM, setPWM);
+  analogWrite(M2PWM, setPWM2);
 
   if(direction2 == 1){
     digitalWrite(M2DIR, HIGH);
   }
   else if (direction2 == -1){
-  digitalWrite(M2DIR, LOW);
+    digitalWrite(M2DIR, LOW);
   }
 
 }
