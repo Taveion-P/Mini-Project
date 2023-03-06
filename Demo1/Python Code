@@ -58,6 +58,7 @@ def readBlock(length = 2): #function to read block of data from arduino
 def aruco(pic,w,l):
     current_quad=0
     ang=0
+    detected=0
     #generate a grayscale image from the given input file
     pic=cv2.cvtColor(pic,cv2.COLOR_BGR2GRAY)
     
@@ -72,6 +73,7 @@ def aruco(pic,w,l):
     
     #Loop that goes through and grabs each corner of the detected marker
     if len(corners) > 0:
+        detected=1
         ids=ids.flatten()
         markers=zip(corners,ids)
         for(c,i) in markers:
@@ -83,11 +85,6 @@ def aruco(pic,w,l):
             b_right=(int(b_right[0]),int(b_right[1]))
             b_left=(int(b_left[0]),int(b_left[1]))
             
-            #drawing the box for each marker
-            """cv2.line(pic,t_left,t_right,(0,255,0),2)
-            cv2.line(pic,t_left,b_left,(0,255,0),2)
-            cv2.line(pic,t_right,b_right,(0,255,0),2)
-            cv2.line(pic,b_left,b_right,(0,255,0),2)"""
             
             #adding the marker id
             cv2.putText(pic,str(i),(t_left[0],t_left[1]-15),cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,0,255),2)
@@ -120,7 +117,7 @@ def aruco(pic,w,l):
                 change_quad=1
             
     #Return processed picture and the quadrent that the object is in
-    return(pic,quad,ang)
+    return(pic,quad,ang,detected)
 
 #Start video and detection
 def start():
