@@ -256,6 +256,55 @@ void loop() {
     output();
     Serial.println(pwr2);
 
+    if(performRotation == true){
+
+      targetOfRotation = 90;
+      
+      currentAngularPosition1 = toRadians(count);
+      currentAngularPosition2 = toRadians(count2);
+
+      float errorTurn1 = targetOfRotation - currentAngularPosition1;
+      float errorTurn2 = targetOfRotation - currentAngularPosition2;
+      
+      integralError1 = integralError1 + error1*changeInTime;
+      integralError2 = integralError2 + error2*changeInTime;
+
+      float ut1Turn = Kp*errorTurn1 + Ki*integralError1;
+      float ut2Turn = Kp*errorTurn2 + Ki*integralError2;
+
+      float pwr1Turn = fabs(ut1Turn * 255);
+      float pwr2Turn = fabs(ut2Turn * 255);
+
+      if(pwr1Turn > 255){
+        pwr1Turn = 255;
+      }
+      if(pwr2Turn > 255){
+        pwr2Turn = 255;
+      }
+
+      int dirTurn1 = 1;
+      int dirTurn2 = 1;
+
+      if(ut1Turn < 0){
+        dirTurn1 = -1;
+      }
+      if(ut2Turn < 0){
+        dirTurn2 = -1;
+      }
+
+      //int direction1, int setPWM1, int direction2, int setPWM2
+      rotateRobot(dirTurn1, pwr1Turn, dirTurn2, pwr2Turn);
+
+      previousError1Turn = errorTurn1;
+      previousError2Turn = errorTurn2;
+
+    }
+
+
+
+
+
+
     //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
     //in the case that it has exceeded the sampling rate print an error
     if(currentmicros - previousmicros >= interval){
