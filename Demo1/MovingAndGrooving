@@ -305,6 +305,9 @@ void powerMotor2(int direction, int setPWM){
 }
 
 void moveStraight(double distance){
+  count =0;
+  count2=0;
+  
   targetAngularPosition1 = distance/(5.75*PI/12.0);
   targetAngularPosition2 = -1*targetAngularPosition1;
 
@@ -395,6 +398,8 @@ void moveStraight(double distance){
 }
 
 void turnAngle(double angle){
+  count = 0;
+  count2= 0;
   float error1 = targetAngularPosition1*rotations - currentAngularPosition1;
   float error2 = targetAngularPosition2*rotations - currentAngularPosition2;
 
