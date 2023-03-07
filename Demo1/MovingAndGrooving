@@ -92,8 +92,8 @@ double previousAngularPosition2 = 0;
 double currentAngularPosition2 = 0;
 
 //the targetAngularPosition will be changed via the Aruco camera to 0, pi/2, pi, or 3pi/2
-double targetAngularPosition1 = -6.64*2*PI;
-double targetAngularPosition2 = 6.64*2*PI;
+double targetAngularPosition1 = 0;
+double targetAngularPosition2 = 0;
 
 //the targetOfRotation will be input via code before demonstration
 double targetOfRotation = 0;
@@ -117,6 +117,15 @@ int dir2;
 
 float error1;
 float error2;
+
+//Constants for the controller (change to best fit the system)
+float const Kp1 = 1;
+float const Kd1 = 0;
+float const Ki1 = 0.5;
+
+float const Kp2 = 1;
+float const Kd2 = 0;
+float const Ki2 = 0.5;
 
 void setup() {
 
@@ -318,26 +327,16 @@ void moveStraight(double distance){
   count2=0;
   
   targetAngularPosition1 = -1*distance/(5.75*PI/12.0);
-  targetAngularPosition2 = targetAngularPosition1;
+  targetAngularPosition2 = -1*targetAngularPosition1;
 
   error1 = targetAngularPosition1 - currentAngularPosition1;
   error2 = targetAngularPosition2 - currentAngularPosition2;
   
   while(error1 != 0 && error2 != 0){
     unsigned long currentmicros = micros();
-  
     
     //using the given sampling rate only sample when the rate has occurred
     if (currentmicros - previousmicros >= interval) {
-  
-      //Constants for the controller (change to best fit the system)
-      float const Kp1 = 1;
-      float const Kd1 = 0;
-      float const Ki1 = 0.5;
-      
-      float const Kp2 = 1;
-      float const Kd2 = 0;
-      float const Ki2 = 0.5;
   
       //find the change in time in seconds
       changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
@@ -354,7 +353,6 @@ void moveStraight(double distance){
       //derivative of the error (not used or needed in this iteration)
       //float derivativeError1 = (error1 - previousError1)/(changeInTime);
       //float derivativeError2 = (error2 - previousError2)/(changeInTime);
-      
   
       //integral of the error
       integralError1 = integralError1 + error1*changeInTime;
@@ -393,6 +391,7 @@ void moveStraight(double distance){
   
       //outputs serveral values for debugging and simulation needs.
       output();
+      Serial.print(pwr1);
       Serial.println(pwr2);
   
       //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
@@ -409,27 +408,19 @@ void moveStraight(double distance){
 void turnAngle(double angle){
   count = 0;
   count2= 0;
-  float error1 = targetAngularPosition1*rotations - currentAngularPosition1;
-  float error2 = targetAngularPosition2*rotations - currentAngularPosition2;
-
+  
   targetAngularPosition1 = degToRad(angle);
   targetAngularPosition2 = degToRad(angle);
-  
+
+  error1 = targetAngularPosition1*rotations - currentAngularPosition1;
+  error2 = targetAngularPosition2*rotations - currentAngularPosition2;
+
   while(error1 != 0 && error2 != 0){
     unsigned long currentmicros = micros();
   
     
     //using the given sampling rate only sample when the rate has occurred
     if (currentmicros - previousmicros >= interval) {
-  
-      //Constants for the controller (change to best fit the system)
-      float const Kp1 = 1;
-      float const Kd1 = 0;
-      float const Ki1 = 0.5;
-      
-      float const Kp2 = 1;
-      float const Kd2 = 0;
-      float const Ki2 = 0.5;
   
       //find the change in time in seconds
       changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
