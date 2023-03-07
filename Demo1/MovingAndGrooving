@@ -105,9 +105,18 @@ double angularVelocity2 = 0;
 
 unsigned long previousmicros = 0;
 
+float ut1;
+float ut2;
 
+float changeInTime;
+float pwr1;
+float pwr2;
 
+int dir1;
+int dir2;
 
+float error1;
+float error2;
 
 void setup() {
 
@@ -160,7 +169,7 @@ void setup() {
   output();   
 
   moveStraight(2);
-  turnAngle(180);
+  //turnAngle(180);
 }
 
 
@@ -308,11 +317,11 @@ void moveStraight(double distance){
   count =0;
   count2=0;
   
-  targetAngularPosition1 = distance/(5.75*PI/12.0);
-  targetAngularPosition2 = -1*targetAngularPosition1;
+  targetAngularPosition1 = -1*distance/(5.75*PI/12.0);
+  targetAngularPosition2 = targetAngularPosition1;
 
-  float error1 = targetAngularPosition1 - currentAngularPosition1;
-  float error2 = targetAngularPosition2 - currentAngularPosition2;
+  error1 = targetAngularPosition1 - currentAngularPosition1;
+  error2 = targetAngularPosition2 - currentAngularPosition2;
   
   while(error1 != 0 && error2 != 0){
     unsigned long currentmicros = micros();
@@ -331,7 +340,7 @@ void moveStraight(double distance){
       float const Ki2 = 0.5;
   
       //find the change in time in seconds
-      float changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
+      changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
       previousmicros = currentmicros;
   
       //reads the current angular postion in radians
@@ -352,13 +361,13 @@ void moveStraight(double distance){
       integralError2 = integralError2 + error2*changeInTime;
   
       //computation of the integral and derivative terms u(t) using the previously defined values
-      float ut1 = Kp1*error1 + Ki1*integralError1;
-      float ut2 = Kp2*error2 + Ki2*integralError2;
+      ut1 = Kp1*error1 + Ki1*integralError1;
+      ut2 = Kp2*error2 + Ki2*integralError2;
   
       //power the motor with speed and direction!
       //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
-      float pwr1 = fabs(ut1 * 255);
-      float pwr2 = fabs(ut2 * 255);
+      pwr1 = fabs(ut1 * 255);
+      pwr2 = fabs(ut2 * 255);
       //pwr cannot exceed 255
    
       if(pwr1 > 255)
@@ -366,8 +375,8 @@ void moveStraight(double distance){
       if(pwr2 > 255)
         pwr2 = 255;
       //set an initial direction for the motor to move
-      int dir1 = 1;
-      int dir2 = 1;
+      dir1 = 1;
+      dir2 = 1;
       //direction is forward (1) if ut > 0 and direction is backward/reverse if ut < 0
       if(ut1 < 0)
         dir1= -1;
@@ -423,7 +432,7 @@ void turnAngle(double angle){
       float const Ki2 = 0.5;
   
       //find the change in time in seconds
-      float changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
+      changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
       previousmicros = currentmicros;
   
       //reads the current angular postion in radians
@@ -444,13 +453,13 @@ void turnAngle(double angle){
       integralError2 = integralError2 + error2*changeInTime;
   
       //computation of the integral and derivative terms u(t) using the previously defined values
-      float ut1 = Kp1*error1 + Ki1*integralError1;
-      float ut2 = Kp2*error2 + Ki2*integralError2;
+      ut1 = Kp1*error1 + Ki1*integralError1;
+      ut2 = Kp2*error2 + Ki2*integralError2;
   
       //power the motor with speed and direction!
       //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
-      float pwr1 = fabs(ut1 * 255);
-      float pwr2 = fabs(ut2 * 255);
+      pwr1 = fabs(ut1 * 255);
+      pwr2 = fabs(ut2 * 255);
       //pwr cannot exceed 255
    
       if(pwr1 > 255)
@@ -458,8 +467,8 @@ void turnAngle(double angle){
       if(pwr2 > 255)
         pwr2 = 255;
       //set an initial direction for the motor to move
-      int dir1 = 1;
-      int dir2 = 1;
+      dir1 = 1;
+      dir2 = 1;
       //direction is forward (1) if ut > 0 and direction is backward/reverse if ut < 0
       if(ut1 < 0)
         dir1= -1;
