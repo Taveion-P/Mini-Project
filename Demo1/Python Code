@@ -34,25 +34,6 @@ quad=0
     #Flag varible to keep track of when the quadrant is changed
 change_quad=0
 
-def writeNumber(value):
-    #bus.write_byte(address, value)
-    try:
-        bus.write_byte_data(address, 0, value)
-    except:
-        print("I2C Write Error")
-    return -1
-    
-#def writeBlock(value): #function to write block of data to arduino
-#    bus.write_i2c_block_data(address, 0, value)
-#    return -1
-
-def readBlock(length = 2): #function to read block of data from arduino
-    try:
-        number = bus.read_i2c_block_data(address, 0, length)
-    except:
-        print("I2C read Error")
-        number = 0
-    return number
 
 #Function that handles the detection of the aruco markers
 def aruco(pic,w,l):
