@@ -136,6 +136,7 @@ def start():
 
     #loop to keep getting and processing frames
     while True:
+        lcd.clear()
         #Getting frame
         ret,frame=cap.read()
         #Running detection on the frame
@@ -181,9 +182,11 @@ def start():
         if a[3]:
             lcd.color = [0, 0, 200]
             lcd.message = "Detected\n" + "Angle: " + str(a[2])
+            time.sleep(5)
         else:
             lcd.color = [200, 0, 0]
             lcd.message = "Not Detected\n"
+            time.sleep(5)
             
         
     #Release the capture and destory all the created windows
