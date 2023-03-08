@@ -109,8 +109,8 @@ float ut1;
 float ut2;
 
 float changeInTime;
-float pwr1;
-float pwr2;
+int pwr1;
+int pwr2;
 
 int dir1;
 int dir2;
@@ -177,10 +177,10 @@ void setup() {
   //prints out the starting position values and time
   output();   
 
-  moveStraight(2);
+  moveStraight(10);
   turnAngle(90);
   turnAngle(90);
-  moveStraight(2);
+  moveStraight(10);
 }
 
 
@@ -356,7 +356,7 @@ void moveStraight(double distance){
   if(pwr2 > maxPWM)
     pwr2 = maxPWM;
   
-  while(pwr1 > 0 || pwr2 > 0){
+  while(pwr1 >= 10 || pwr2 >= 10){
     unsigned long currentmicros = micros();
     
     //using the given sampling rate only sample when the rate has occurred
@@ -431,7 +431,7 @@ void moveStraight(double distance){
     }
   }
   //delay 10 seconds before moving on
-  delay(10000);
+  delay(1000);
 }
 
 void turnAngle(double angle){
@@ -462,7 +462,7 @@ void turnAngle(double angle){
   if(pwr2 > maxPWM)
     pwr2 = maxPWM;
   
-  while(pwr1 > 0 || pwr2 > 0){
+  while(pwr1 >=10 || pwr2 >= 10){
     unsigned long currentmicros = micros();
   
     
@@ -535,7 +535,7 @@ void turnAngle(double angle){
     }
   }
   //delay 10 seconds before moving on
-  delay(10000);
+  delay(1000);
 }
 
 //function to recieve data from pi
