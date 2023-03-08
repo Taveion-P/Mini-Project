@@ -30,6 +30,7 @@
 #define resetPin 13
 
 #define maxPWM 128
+#define minPWM 20
 //*****
 //creates global variables that will be used in the future.
 //*****
@@ -355,8 +356,12 @@ void moveStraight(double distance){
     pwr1 = maxPWM;
   if(pwr2 > maxPWM)
     pwr2 = maxPWM;
-  
-  while(pwr1 >= 10 || pwr2 >= 10){
+  if(pwr1 < minPWM)
+    pwr1 = minPWM;
+  if(pwr2 < minPWM)
+    pwr2 = minPWM;
+        
+  while(fabs(error1) >=0.1 || abs(error2) >= 0.1){
     unsigned long currentmicros = micros();
     
     //using the given sampling rate only sample when the rate has occurred
@@ -396,6 +401,11 @@ void moveStraight(double distance){
         pwr1 = maxPWM;
       if(pwr2 > maxPWM)
         pwr2 = maxPWM;
+      if(pwr1 < minPWM)
+        pwr1 = minPWM;
+      if(pwr2 < minPWM)
+        pwr2 = minPWM;
+        
       //set an initial direction for the motor to move
       dir1 = 1;
       dir2 = 1;
@@ -430,7 +440,9 @@ void moveStraight(double distance){
       }
     }
   }
-  //delay 10 seconds before moving on
+  //delay 1 seconds before moving on and turn motors off
+  powerMotor1(dir1, 0);
+  powerMotor2(dir2, 0);
   delay(1000);
 }
 
@@ -461,8 +473,12 @@ void turnAngle(double angle){
     pwr1 = maxPWM;
   if(pwr2 > maxPWM)
     pwr2 = maxPWM;
-  
-  while(pwr1 >=10 || pwr2 >= 10){
+  if(pwr1 < minPWM)
+    pwr1 = minPWM;
+  if(pwr2 < minPWM)
+    pwr2 = minPWM;
+        
+  while(fabs(error1) >=0.10 || fabs(error2) >= 0.10){
     unsigned long currentmicros = micros();
   
     
@@ -504,6 +520,10 @@ void turnAngle(double angle){
         pwr1 = maxPWM;
       if(pwr2 > maxPWM)
         pwr2 = maxPWM;
+      if(pwr1 < minPWM)
+        pwr1 = minPWM;
+      if(pwr2 < minPWM)
+        pwr2 = minPWM;
       //set an initial direction for the motor to move
       dir1 = 1;
       dir2 = 1;
@@ -534,7 +554,9 @@ void turnAngle(double angle){
       }
     }
   }
-  //delay 10 seconds before moving on
+  //delay 1 seconds before moving on and turn motors off
+  powerMotor1(dir1, 0);
+  powerMotor2(dir2, 0);
   delay(1000);
 }
 
