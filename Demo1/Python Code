@@ -175,8 +175,16 @@ def start():
         currentPosition = currentPosition*6.28318530718/40.0
 
         #displays setpoint on lcd
-        lcd.color = [0, 200, 0]
-        lcd.message = "Setpoint: " + desiredSetpoint
+        #lcd.color = [0, 200, 0]
+        #lcd.message = "Setpoint: " + desiredSetpoint
+        
+        if a[3]:
+            lcd.color = [0, 0, 200]
+            lcd.message = "Detected\n" + "Angle: " + str(a[2])
+        else:
+            lcd.color = [200, 0, 0]
+            lcd.message = "Not Detected\n"
+            
         
     #Release the capture and destory all the created windows
     cap.release()
