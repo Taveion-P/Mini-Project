@@ -1,5 +1,5 @@
 //Team Super Awesome Mega Cool Mini Project
-//3/6/2023
+//3/8/2023
 
 //include Wire.h and address for easy i2c communication between the arduino and pi
 #include <Wire.h>
@@ -29,7 +29,7 @@
 //pin for a button that can reset the current motor position to be the starting zero position.
 #define resetPin 13
 
-
+#define maxPWM 128
 //*****
 //creates global variables that will be used in the future.
 //*****
@@ -178,7 +178,9 @@ void setup() {
   output();   
 
   moveStraight(2);
-  //turnAngle(180);
+  turnAngle(90);
+  turnAngle(90);
+  moveStraight(2);
 }
 
 
@@ -191,11 +193,11 @@ void loop() {
 
 void A_ISR(){
   //This is the ISR function that triggers anytime that there is a change in A.
-
+  //Serial.println("In ISR");
   //reads the current values of A and B
   A=digitalRead(CLK_A);
   B=digitalRead(DT_B);
-
+  
   //checks whether the the encoder is moving clockwise or counter clockwise based on the current and past value of A and the current state of B.
   if(A != Alast){
     if(digitalRead(DT_B)!=A){
@@ -266,12 +268,12 @@ void output() {
   //Serial.print("\t"); 
   //Serial.print(theta,3);
   //Serial.print("\t");*/
-  //Serial.print(count);
-  //Serial.print("\t");  
-  Serial.println(count2);
+  Serial.print(count);
+  Serial.print("\t");  
+  Serial.print(count2);
   Serial.print("\t"); 
-  Serial.print(toRadians(count2));
-  Serial.print("\t");
+//  Serial.print(toRadians(count2));
+//  Serial.print("\t");
   
 }
 
@@ -326,13 +328,35 @@ void moveStraight(double distance){
   count =0;
   count2=0;
   
-  targetAngularPosition1 = -1*distance/(5.75*PI/12.0);
+  targetAngularPosition1 = -1*(distance/(5.8*PI/12.0))*2*PI;
   targetAngularPosition2 = -1*targetAngularPosition1;
+
+  currentAngularPosition1 = toRadians(count);
+  currentAngularPosition2 = toRadians(count2);
 
   error1 = targetAngularPosition1 - currentAngularPosition1;
   error2 = targetAngularPosition2 - currentAngularPosition2;
+
+  //integral of the error
+  integralError1 = integralError1 + error1*changeInTime;
+  integralError2 = integralError2 + error2*changeInTime;
+
+  //computation of the integral and derivative terms u(t) using the previously defined values
+  ut1 = Kp1*error1 + Ki1*integralError1;
+  ut2 = Kp2*error2 + Ki2*integralError2;
+
+  //power the motor with speed and direction!
+  //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
+  pwr1 = fabs(ut1 * maxPWM);
+  pwr2 = fabs(ut2 * maxPWM);
+  //pwr cannot exceed 255
+
+  if(pwr1 > maxPWM)
+    pwr1 = maxPWM;
+  if(pwr2 > maxPWM)
+    pwr2 = maxPWM;
   
-  while(error1 != 0 && error2 != 0){
+  while(pwr1 > 0 || pwr2 > 0){
     unsigned long currentmicros = micros();
     
     //using the given sampling rate only sample when the rate has occurred
@@ -364,14 +388,14 @@ void moveStraight(double distance){
   
       //power the motor with speed and direction!
       //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
-      pwr1 = fabs(ut1 * 255);
-      pwr2 = fabs(ut2 * 255);
+      pwr1 = fabs(ut1 * maxPWM);
+      pwr2 = fabs(ut2 * maxPWM);
       //pwr cannot exceed 255
    
-      if(pwr1 > 255)
-        pwr1 = 255;
-      if(pwr2 > 255)
-        pwr2 = 255;
+      if(pwr1 > maxPWM)
+        pwr1 = maxPWM;
+      if(pwr2 > maxPWM)
+        pwr2 = maxPWM;
       //set an initial direction for the motor to move
       dir1 = 1;
       dir2 = 1;
@@ -391,7 +415,12 @@ void moveStraight(double distance){
   
       //outputs serveral values for debugging and simulation needs.
       output();
+      Serial.print(error1);
+      Serial.print("\t");
+      Serial.print(error2);
+      Serial.print("\t");
       Serial.print(pwr1);
+      Serial.print("\t");
       Serial.println(pwr2);
   
       //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
@@ -412,10 +441,28 @@ void turnAngle(double angle){
   targetAngularPosition1 = degToRad(angle);
   targetAngularPosition2 = degToRad(angle);
 
+  currentAngularPosition1 = toRadians(count);
+  currentAngularPosition2 = toRadians(count2);
+
   error1 = targetAngularPosition1*rotations - currentAngularPosition1;
   error2 = targetAngularPosition2*rotations - currentAngularPosition2;
 
-  while(error1 != 0 && error2 != 0){
+  //computation of the integral and derivative terms u(t) using the previously defined values
+  ut1 = Kp1*error1 + Ki1*integralError1;
+  ut2 = Kp2*error2 + Ki2*integralError2;
+
+  //power the motor with speed and direction!
+  //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
+  pwr1 = fabs(ut1 * maxPWM);
+  pwr2 = fabs(ut2 * maxPWM);
+  //pwr cannot exceed 255
+
+  if(pwr1 > maxPWM)
+    pwr1 = maxPWM;
+  if(pwr2 > maxPWM)
+    pwr2 = maxPWM;
+  
+  while(pwr1 > 0 || pwr2 > 0){
     unsigned long currentmicros = micros();
   
     
@@ -449,14 +496,14 @@ void turnAngle(double angle){
   
       //power the motor with speed and direction!
       //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
-      pwr1 = fabs(ut1 * 255);
-      pwr2 = fabs(ut2 * 255);
+      pwr1 = fabs(ut1 * maxPWM);
+      pwr2 = fabs(ut2 * maxPWM);
       //pwr cannot exceed 255
    
-      if(pwr1 > 255)
-        pwr1 = 255;
-      if(pwr2 > 255)
-        pwr2 = 255;
+      if(pwr1 > maxPWM)
+        pwr1 = maxPWM;
+      if(pwr2 > maxPWM)
+        pwr2 = maxPWM;
       //set an initial direction for the motor to move
       dir1 = 1;
       dir2 = 1;
@@ -476,6 +523,8 @@ void turnAngle(double angle){
   
       //outputs serveral values for debugging and simulation needs.
       output();
+      Serial.print(pwr1);
+      Serial.print("\t");
       Serial.println(pwr2);
   
       //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
