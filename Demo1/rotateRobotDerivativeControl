@@ -1,0 +1,441 @@
+//Team Super Awesome Mega Cool Mini Project
+//2/26/2023
+
+//include Wire.h and address for easy i2c communication between the arduino and pi
+#include <Wire.h>
+#define SLAVE_ADDRESS 0x04
+//the arduino by default will use A4 and A5 for sending and recieving data.
+
+//*****
+//pin out definitions for where everything should be connected to.
+//*****
+
+//encoder pins for left (1) and right (2) encoders
+#define CLK_A 2
+#define DT_B 5
+
+#define CLK_A2 3
+#define DT_B2 6
+
+//motor pins
+#define M1PWM 9
+#define M2PWM 10
+#define M1DIR 7 
+#define M2DIR 8
+#define nD2 4
+
+#define i2cdebug 1
+
+//pin for a button that can reset the current motor position to be the starting zero position.
+#define resetPin 13
+
+
+//*****
+//creates global variables that will be used in the future.
+//*****
+
+//global variables for left (1st) encoder
+int count=0;
+int A;
+int B;
+int Alast;
+int Blast;
+double velocityLeft=0;
+unsigned long time1;
+int deltaTimeLeft=0;
+double thetaLeftNew=0;
+double thetaLeftOld=0;
+
+//global variables for right (2nd) encoder.
+int count2=0;
+int A_2;
+int B_2;
+int Alast2;
+int Blast2;
+double velocityRight=0;
+unsigned long time2;
+int deltaTimeRight=0;
+double thetaRightNew=0;
+double thetaRightOld=0;
+
+//defines constant variables that will be used in the future.
+double const radius=0.05;
+double const b = 0.1;
+double const rotations = 2.5522;
+
+//defines and sets starting positions for the robot.
+double posX=0;
+double posY=0;
+double theta=0;
+
+//setpoint that is read over i2c communcation that will tell the motor which position to move to. (will range from 1-4)
+byte setpoint = 0;
+
+
+//*****
+//transfer function values
+//*****
+
+float previousError1 = 0;
+float previousError2 = 0;
+float integralError1 = 0;
+float integralError2 = 0;
+
+//use previous micros starting at zero to serve as a starting point for the sample rate of the main program
+int interval = 5000; //use as the sample rate (the amount of time that the program should wait between sampling values)
+
+//use the encoder code to repeatedly calculate a value for the angular position of the wheels
+double previousAngularPosition1 = 0;
+double currentAngularPosition1 = 0;
+
+double previousAngularPosition2 = 0;
+double currentAngularPosition2 = 0;
+
+//the targetAngularPosition will be changed via the Aruco camera to 0, pi/2, pi, or 3pi/2
+double targetAngularPosition1 = PI/2;
+double targetAngularPosition2 = PI/2;
+
+//the targetOfRotation will be input via code before demonstration
+double targetOfRotation = 0;
+
+double angularVelocity1 = 0;
+double angularVelocity2 = 0;
+//use the previous angularPosition and compare with the current angular position as well as the interval rate (time over which the position has changed)
+//in order to determine the angularVelocity of the wheel
+
+unsigned long previousmicros = 0;
+
+
+
+
+
+void setup() {
+
+  // Starts Serial to be able to print out and read encoder values
+  Serial.begin(115200);
+
+  // initialize i2c as slave
+  Wire.begin(SLAVE_ADDRESS);
+
+  //define callbacks for i2c communication
+  Wire.onReceive(receiveData);
+  Wire.onRequest(sendData);
+  Serial.println("Ready!");
+
+
+  //defines the different pins on the Arduino as inputs to read the values of the encoder.
+  //pin for a button that can reset the current motor position to be the starting zero position.
+  pinMode(resetPin, INPUT_PULLUP);
+  
+  //pinmode for both motor encoders
+  pinMode(CLK_A, INPUT);
+  pinMode(DT_B, INPUT);
+  pinMode(CLK_A2, INPUT);
+  pinMode(DT_B2, INPUT);
+
+  //pinmode for the motor and motor shield
+  pinMode(M1DIR, OUTPUT);
+  pinMode(M2DIR, OUTPUT);
+  pinMode(M1PWM, OUTPUT);
+  pinMode(M2PWM, OUTPUT);
+  pinMode(nD2, OUTPUT);
+
+  //immediately set D2 to high to allow motor to be moved
+  digitalWrite(nD2, HIGH);
+
+  //defines Alast which will immediently be used in the loop for monitoring the count rotation state of the encoder.
+  Alast = digitalRead(CLK_A);
+  Alast2 = digitalRead(CLK_A2);
+
+  //attachs the interrupt function
+  //uses 0 or 1 for either the 2nd or 3rd pin interrupt, the function assossiacted with the interupt, and change in A.
+  attachInterrupt(0,A_ISR , CHANGE);
+  attachInterrupt(1,A_ISR2, CHANGE);
+
+  //set the starting times to the current time
+  time1=micros();
+  time2=micros();
+
+  //prints out the starting position values and time
+  output();   
+
+}
+
+
+
+
+
+
+void loop() {
+
+  //checks whether or not we wish to test the rotation capabilities of the robot
+  
+  bool performRotation = true;
+  //checks every loop to see if the button is reset to reset the count to 0. 
+  if(digitalRead(resetPin) == 0){
+    count = 0;
+  }
+  //update the current time
+  unsigned long currentmicros = micros();
+
+  //using the given sampling rate only sample when the rate has occurred
+  if (currentmicros - previousmicros >= interval) {
+
+    /*
+    //checks current setpoint and updates to new target position if needed.
+    switch(setpoint){
+      case 1: targetAngularPosition = 0; break;
+      case 2: targetAngularPosition = PI/2; break;
+      case 3: targetAngularPosition = PI; break;
+      case 4: targetAngularPosition = 3*PI/2; break;
+    }
+    */
+
+    //Constants for the controller (change to best fit the system)
+    float const Kp1 = 1;
+    float const Kd1 = 0;
+    float const Ki1 = 0.5;
+    
+    float const Kp2 = 1;
+    float const Kd2 = 0;
+    float const Ki2 = 0.5;
+
+    //find the change in time in seconds
+    float changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
+    previousmicros = currentmicros;
+
+    //reads the current angular postion in radians
+    currentAngularPosition1 = toRadians(count);
+    currentAngularPosition2 = toRadians(count2);
+
+    //current ERROR (distance between desired pos and current pos)
+    float error1 = targetAngularPosition1*2.5522 - currentAngularPosition1;
+    float error2 = targetAngularPosition2*2.5522 - currentAngularPosition2;
+
+    //derivative of the error (not used or needed in this iteration)
+
+    float derivativeError1 = 0;
+    float derivativeError2 = 0;
+
+    if(changeInTime > 0){
+    derivativeError1 = (error1 - previousError1)/(changeInTime);
+    derivativeError2 = (error2 - previousError2)/(changeInTime);
+    }
+  
+    
+
+    //integral of the error
+    integralError1 = integralError1 + error1*changeInTime;
+    integralError2 = integralError2 + error2*changeInTime;
+
+    //computation of the integral and derivative terms u(t) using the previously defined values
+    float ut1 = Kp1*error1 + Ki1*integralError1 + Kd1*derivativeError1;
+    float ut2 = Kp2*error2 + Ki2*integralError2 + Kd2*derivativeError2;
+
+    //power the motor with speed and direction!
+    //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
+    float pwr1 = fabs(ut1 * 255);
+    float pwr2 = fabs(ut2 * 255);
+    //pwr cannot exceed 255
+ 
+    if(pwr1 > 100)
+      pwr1 = 100;
+    if(pwr2 > 100)
+      pwr2 = 100;
+    //set an initial direction for the motor to move
+    int dir1 = 1;
+    int dir2 = 1;
+    //direction is forward (1) if ut > 0 and direction is backward/reverse if ut < 0
+    if(ut1 < 0)
+      dir1= -1;
+    if(ut2 < 0)
+      dir2 = -1;
+    
+    //call the motor function and pass the direction the motor should move and the PWM power to be supplied
+    powerMotor1(dir1, pwr1);
+    powerMotor2(dir2, pwr2);
+
+    //current error becomes previous error as the loop finishes
+    previousError1 = error1;
+    previousError2 = error2;
+
+    //outputs serveral values for debugging and simulation needs.
+    output();
+    Serial.println(pwr2);
+
+    //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
+    //in the case that it has exceeded the sampling rate print an error
+    if(currentmicros - previousmicros >= interval){
+      Serial.print("ERROR: RUN TIME HAS EXCEEDED SAMPLING TIME");
+    }
+   
+  }
+}
+
+void A_ISR(){
+  //This is the ISR function that triggers anytime that there is a change in A.
+
+  //reads the current values of A and B
+  A=digitalRead(CLK_A);
+  B=digitalRead(DT_B);
+
+  //checks whether the the encoder is moving clockwise or counter clockwise based on the current and past value of A and the current state of B.
+  if(A != Alast){
+    if(digitalRead(DT_B)!=A){
+      count++;
+    }else{
+      count--;
+    }
+  }
+  //updates the last value of A
+  Alast=A;
+  
+}
+
+void A_ISR2(){
+  //This is the ISR function that triggers anytime that there is a change in A2.
+
+  //reads the current values of A and B
+  A_2=digitalRead(CLK_A2);
+  B_2=digitalRead(DT_B2);
+  
+  //checks whether the the encoder is moving clockwise or counter clockwise based on the current and past value of A and the current state of B.
+  if(A_2 != Alast2){
+    if(digitalRead(DT_B2)!=A_2){
+      count2++;
+    }else{
+      count2--;
+    }
+  }
+  //updates the last value of A
+  Alast2=A_2;
+
+}
+
+void output() {
+  //grabs the new current theta position for each wheel in radians
+  thetaLeftNew = toRadians(count);
+  thetaRightNew = toRadians(count2);
+  
+  //Updates the left and right wheel velocities every time the output function is called, giving a good average velocity
+  //Before doing this it checks to see if there is a time difference as not to produce an error or infinity value when dividing by 0
+  if(micros()-time1 != 0)
+  velocityLeft = radius * 1000000.0*(thetaLeftNew - thetaLeftOld)/(micros()-time1);
+
+  if(micros()-time2 != 0)
+  velocityRight = radius * 1000000.0*(thetaRightNew - thetaRightOld)/(micros()-time2);
+
+  //updates the last time the output was called and the moves the newly read theta value into the old theta value
+  time1 = micros();
+  time2 = micros();
+  thetaLeftOld = thetaLeftNew;
+  thetaRightOld = thetaRightNew;
+  
+  //calculates the X, Y, and phi positions using the given equations 
+  posX = posX + cos(theta)*(velocityLeft + velocityRight)/2.0;
+  posY = posY + sin(theta)*(velocityLeft + velocityRight)/2.0;
+  theta = theta + ( 1/b*(velocityLeft - velocityRight) );
+
+  //prints out all the associated values to the terminal
+  Serial.print( micros() );
+  Serial.print("\t");
+  //Serial.print(velocityLeft,2);
+  //Serial.print("\t");
+  //Serial.print(velocityRight,2);  
+  //Serial.print("\t");
+  //Serial.print(posX,3);
+  //Serial.print("\t");
+  //Serial.print(posY,3);
+  //Serial.print("\t"); 
+  //Serial.print(theta,3);
+  //Serial.print("\t");*/
+  //Serial.print(count);
+  //Serial.print("\t");  
+  Serial.println(count2);
+  Serial.print("\t"); 
+  Serial.print(toRadians(count2));
+  Serial.print("\t");
+  
+}
+
+double toRadians(int count){
+  return count*2*PI/1600.0;
+}
+
+//used to apply power and direction to a dc motor connected to the arduino
+void powerMotor1(int direction, int setPWM){
+
+  //use analog write to set the PWM value of the motor
+  analogWrite(M1PWM, setPWM);
+
+  //now based off the direction input (1 for forward !1 for backward) apply the voltage to the motor
+  if(direction == 1){
+    //motor moves wheel forward
+    digitalWrite(M1DIR, LOW);
+  } 
+  else if(direction == -1){ 
+    //motor moves wheel backward
+    digitalWrite(M1DIR, HIGH);
+  }
+
+}
+
+void powerMotor2(int direction, int setPWM){
+
+  //use analog write to set the PWM value of the motor
+  analogWrite(M2PWM, setPWM);
+
+  //now based off the direction input (1 for forward !1 for backward) apply the voltage to the motor
+  if(direction == 1){
+    //motor moves wheel forward
+    digitalWrite(M2DIR, HIGH);
+  } 
+  else if(direction == -1){ 
+    //motor moves wheel backward
+    digitalWrite(M2DIR, LOW);
+  }
+
+}
+
+
+//used in order to rotate the robot motors should always move in opposite directions with the directions based off the targetedAngularRotation
+void rotateRobot(int direction1, int setPWM1, int direction2, int setPWM2){
+
+  analogWrite(M1PWM, setPWM1);
+
+  if(direction1 == 1){
+    digitalWrite(M1DIR, HIGH);
+  }
+  else if (direction1 == -1){
+    digitalWrite(M1DIR, LOW);
+  }
+
+  analogWrite(M2PWM, setPWM2);
+
+  if(direction2 == 1){
+    digitalWrite(M2DIR, HIGH);
+  }
+  else if (direction2 == -1){
+    digitalWrite(M2DIR, LOW);
+  }
+
+}
+
+//function to recieve data from pi
+void receiveData(int byteCount) { 
+  if (!Wire.read()) setpoint = Wire.read(); //reading setpoint from pi
+  Serial.print("Setpoint = ");
+  Serial.println(setpoint);
+  
+  #if i2cdebug //to assist in debugging
+  Serial.println(" ");
+  #endif
+}
+
+// callback for sending data
+void sendData(){
+  byte low = byte(count); //giving variable low first 8 bits to send
+  byte high = byte(count >> 8); //giving variable high second 8 bits
+  Wire.write(high); //sends high 8 bits
+  Wire.write(low); //sends low 8 bits
+}
