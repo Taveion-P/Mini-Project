@@ -1,5 +1,5 @@
 //Team Super Awesome Mega Cool Mini Project
-//3/8/2023
+//3/13/2023
 
 //include Wire.h and address for easy i2c communication between the arduino and pi
 #include <Wire.h>
@@ -30,7 +30,7 @@
 #define resetPin 13
 
 #define maxPWM 128
-#define minPWM 20
+#define minPWM 0
 //*****
 //creates global variables that will be used in the future.
 //*****
@@ -178,10 +178,10 @@ void setup() {
   //prints out the starting position values and time
   output();   
 
-  moveStraight(10);
+  moveStraight(5);
   turnAngle(90);
   turnAngle(90);
-  moveStraight(10);
+  moveStraight(5);
 }
 
 
@@ -360,8 +360,11 @@ void moveStraight(double distance){
     pwr1 = minPWM;
   if(pwr2 < minPWM)
     pwr2 = minPWM;
-        
-  while(fabs(error1) >=0.1 || abs(error2) >= 0.1){
+
+  boolean keepMoving = true;
+  long stationaryTime=0;
+  
+  while(keepMoving){
     unsigned long currentmicros = micros();
     
     //using the given sampling rate only sample when the rate has occurred
@@ -438,6 +441,17 @@ void moveStraight(double distance){
       if(currentmicros - previousmicros >= interval){
         Serial.print("ERROR: RUN TIME HAS EXCEEDED SAMPLING TIME");
       }
+
+
+      if(stationaryTime == 0 && abs(error1) <=0.1 && abs(error2) <= 0.1){
+          stationaryTime = currentmicros;
+          keepMoving = false;
+          Serial.print(stationaryTime);
+      }
+      if(stationaryTime != 0 && currentmicros > stationaryTime+100000){
+          keepMoving = false;
+      }
+              
     }
   }
   //delay 1 seconds before moving on and turn motors off
@@ -477,8 +491,11 @@ void turnAngle(double angle){
     pwr1 = minPWM;
   if(pwr2 < minPWM)
     pwr2 = minPWM;
-        
-  while(fabs(error1) >=0.10 || fabs(error2) >= 0.10){
+
+  boolean keepMoving = true;
+  long stationaryTime=0;
+  
+  while(keepMoving){
     unsigned long currentmicros = micros();
   
     
@@ -543,6 +560,10 @@ void turnAngle(double angle){
   
       //outputs serveral values for debugging and simulation needs.
       output();
+      Serial.print(error1);
+      Serial.print("\t");
+      Serial.print(error2);
+      Serial.print("\t");
       Serial.print(pwr1);
       Serial.print("\t");
       Serial.println(pwr2);
@@ -552,6 +573,16 @@ void turnAngle(double angle){
       if(currentmicros - previousmicros >= interval){
         Serial.print("ERROR: RUN TIME HAS EXCEEDED SAMPLING TIME");
       }
+
+      if(stationaryTime == 0 && abs(error1) <=0.1 && abs(error2) <= 0.1){
+          stationaryTime = currentmicros;
+          keepMoving = false;
+          Serial.print(stationaryTime);
+      }
+      if(stationaryTime != 0 && currentmicros > stationaryTime+100000){
+          keepMoving = false;
+      }
+      
     }
   }
   //delay 1 seconds before moving on and turn motors off
