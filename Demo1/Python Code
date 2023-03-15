@@ -132,7 +132,7 @@ def start():
         
         if a[3]:
             lcd.color = [0, 0, 200]
-            lcd.message = "Detected\n" + "Angle: " + str(a[2])
+            lcd.message = "Detected\n" + "Angle: " + str(a[2]) + "     "
         else:
             lcd.color = [200, 0, 0]
             lcd.message = "Not Detected\n              "     
