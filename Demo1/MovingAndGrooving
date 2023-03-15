@@ -1,5 +1,5 @@
 //Team Super Awesome Mega Cool Mini Project
-//3/13/2023
+//3/15/2023
 
 //include Wire.h and address for easy i2c communication between the arduino and pi
 #include <Wire.h>
@@ -178,10 +178,11 @@ void setup() {
   //prints out the starting position values and time
   output();   
 
-  moveStraight(5);
-  turnAngle(90);
-  turnAngle(90);
-  moveStraight(5);
+  //main code to make Jopherie move in a certain direction and/or angle
+  //turnAngle(89);
+  //turnAngle(-89);
+  turnAngle(178);
+  moveStraight(2);
 }
 
 
@@ -369,7 +370,7 @@ void moveStraight(double distance){
     
     //using the given sampling rate only sample when the rate has occurred
     if (currentmicros - previousmicros >= interval) {
-  
+      
       //find the change in time in seconds
       changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
       previousmicros = currentmicros;
@@ -381,7 +382,7 @@ void moveStraight(double distance){
       //current ERROR (distance between desired pos and current pos)
       error1 = targetAngularPosition1 - currentAngularPosition1;
       error2 = targetAngularPosition2 - currentAngularPosition2;
-  
+      
       //derivative of the error (not used or needed in this iteration)
       //float derivativeError1 = (error1 - previousError1)/(changeInTime);
       //float derivativeError2 = (error2 - previousError2)/(changeInTime);
@@ -419,9 +420,21 @@ void moveStraight(double distance){
         dir2 = -1;
       
       //call the motor function and pass the direction the motor should move and the PWM power to be supplied
-      powerMotor1(dir1, pwr1);
-      powerMotor2(dir2, pwr2);
-  
+      //ideally the motor counts should be exactly the same to be moving in a straight line
+      //if the robot begins to veer off, then it should self correct by moving the motor that is behind by itself.
+      if(fabs(count) - fabs(count2) > 30 || fabs(count2) - fabs(count) > 30){
+        if(abs(count) > abs(count2)){
+            powerMotor1(dir1, 0);
+            powerMotor2(dir2,64);
+        }
+        if(abs(count) < abs(count2)){
+            powerMotor1(dir1, 64);
+            powerMotor2(dir2,64);
+        }
+      }else{
+        powerMotor1(dir1, pwr1);
+        powerMotor2(dir2, pwr2);
+      }
       //current error becomes previous error as the loop finishes
       previousError1 = error1;
       previousError2 = error2;
@@ -442,7 +455,7 @@ void moveStraight(double distance){
         Serial.print("ERROR: RUN TIME HAS EXCEEDED SAMPLING TIME");
       }
 
-
+      //waits untill the error is below a certain threshold to leave the loop to move onto the next action
       if(stationaryTime == 0 && abs(error1) <=0.1 && abs(error2) <= 0.1){
           stationaryTime = currentmicros;
           keepMoving = false;
@@ -479,10 +492,9 @@ void turnAngle(double angle){
 
   //power the motor with speed and direction!
   //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
-  pwr1 = fabs(ut1 * maxPWM);
-  pwr2 = fabs(ut2 * maxPWM);
-  //pwr cannot exceed 255
-
+  pwr1 = abs(ut1 * maxPWM);
+  pwr2 = abs(ut2 * maxPWM);
+  //pwr cannot exceed maxPWM or go lower than minPWM
   if(pwr1 > maxPWM)
     pwr1 = maxPWM;
   if(pwr2 > maxPWM)
@@ -551,8 +563,19 @@ void turnAngle(double angle){
         dir2 = -1;
       
       //call the motor function and pass the direction the motor should move and the PWM power to be supplied
-      powerMotor1(dir1, pwr1);
-      powerMotor2(dir2, pwr2);
+      if(fabs(count) - fabs(count2) > 30 || fabs(count2) - fabs(count) > 30){
+        if(abs(count) > abs(count2)){
+            powerMotor1(dir1, 0);
+            powerMotor2(dir2,64);
+        }
+        if(abs(count) < abs(count2)){
+            powerMotor1(dir1, 64);
+            powerMotor2(dir2,64);
+        }
+      }else{
+        powerMotor1(dir1, pwr1);
+        powerMotor2(dir2, pwr2);
+      }
   
       //current error becomes previous error as the loop finishes
       previousError1 = error1;
@@ -574,6 +597,7 @@ void turnAngle(double angle){
         Serial.print("ERROR: RUN TIME HAS EXCEEDED SAMPLING TIME");
       }
 
+      //waits untill the error is below a certain threshold to leave the loop to move onto the next action
       if(stationaryTime == 0 && abs(error1) <=0.1 && abs(error2) <= 0.1){
           stationaryTime = currentmicros;
           keepMoving = false;
