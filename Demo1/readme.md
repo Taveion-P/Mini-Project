@@ -9,9 +9,15 @@ This repostitory contains all of the code used to accopmlish the tasks for DEMO 
 Attached below is a breif descption of each file
 
 "2 motor movement": experimental code to move both motors
+
 "90 degree movement": code to turn the robot 90 degrees
+
 "Move10Feet": code to move 10 feet
+
 "MovingandGrooving": code to move a specifeid angle and distance
+
 "Python Code": code to controll LCD and aruco detection
+
 "movementWithDerivativeControl": code to move a specifed distance with added derivative contoller
+
 "rotateRobotDerivaitveControl": mode to rotate the rotate the robot with added derivative contorller
