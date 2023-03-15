@@ -37,6 +37,7 @@ change_quad=0
 
 #Function that handles the detection of the aruco markers
 def aruco(pic,w,l):
+    #values to help with marker detection
     current_quad=0
     ang=0
     detected=0
@@ -130,7 +131,7 @@ def start():
             break
 
         
-        if a[3]:
+        if a[3]: #controls lcd screen and prints angle based on detection or no detection
             lcd.color = [0, 0, 200]
             lcd.message = "Detected\n" + "Angle: " + str(a[2]) + "     "
         else:
