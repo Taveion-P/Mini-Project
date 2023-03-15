@@ -193,12 +193,12 @@ void loop() {
 
     //Constants for the controller (change to best fit the system)
     float const Kp1 = 1;
-    float const Kd1 = 0;
-    float const Ki1 = 0.5;
+    float const Kd1 = 0.25;
+    float const Ki1 = 10;
     
     float const Kp2 = 1;
     float const Kd2 = 0;
-    float const Ki2 = 0.5;
+    float const Ki2 = 10;
 
     //find the change in time in seconds
     float changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
@@ -228,6 +228,11 @@ void loop() {
     integralError1 = integralError1 + error1*changeInTime;
     integralError2 = integralError2 + error2*changeInTime;
 
+    if(currentAngularPosition1 < 0.75*targetAngularPosition1){
+      integralError1 = 0;
+      integralError2 = 0;
+    }
+
     //computation of the integral and derivative terms u(t) using the previously defined values
     float ut1 = Kp1*error1 + Ki1*integralError1 + Kd1*derivativeError1;
     float ut2 = Kp2*error2 + Ki2*integralError2 + Kd2*derivativeError2;
@@ -238,10 +243,10 @@ void loop() {
     float pwr2 = fabs(ut2 * 255);
     //pwr cannot exceed 255
  
-    if(pwr1 > 100)
-      pwr1 = 100;
-    if(pwr2 > 100)
-      pwr2 = 100;
+    if(pwr1 > 75)
+      pwr1 = 75;
+    if(pwr2 > 75)
+      pwr2 = 75;
     //set an initial direction for the motor to move
     int dir1 = 1;
     int dir2 = 1;
