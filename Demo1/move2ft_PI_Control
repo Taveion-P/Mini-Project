@@ -201,7 +201,7 @@ void loop() {
     float const Ki2 = 20;
 
     //find the change in time in seconds
-    float changeInTime = ((float)(currentmicros = previousmicros))/(1000000);
+    float changeInTime = ((float)(currentmicros - previousmicros))/(1000000);
     previousmicros = currentmicros;
 
     //reads the current angular postion in radians
