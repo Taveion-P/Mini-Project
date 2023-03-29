@@ -1,5 +1,5 @@
 //Team Super Awesome Mega Cool Mini Project
-//3/15/2023
+//3/29/2023
 
 //include Wire.h and address for easy i2c communication between the arduino and pi
 #include <Wire.h>
@@ -62,7 +62,7 @@ double thetaRightOld=0;
 //defines constant variables that will be used in the future.
 double const radius=0.05;
 double const b = 0.1;
-double const rotations = 2.5522;
+double const rotations = 2.3; //2.522 was calculated roation ratio
 
 //defines and sets starting positions for the robot.
 double posX=0;
@@ -180,11 +180,12 @@ void setup() {
   //prints out the starting position values and time
   output();   
 
-  //main code to make Jopherie move in a certain direction and/or angle
-  //turnAngle(89);
-  //turnAngle(-89);
-  turnAngle(178);
-  moveStraight(2);
+  //main code to make Jopherie movtryne in a certain direction and/or angle
+  turnAngle(90);
+  //turnAngle(-90);
+  turnAngle(180);
+  //turnAngle(360);
+  //moveStraight(2);
 }
 
 
@@ -581,7 +582,7 @@ void turnAngle(double angle){
         dir2 = -1;
       
       //call the motor function and pass the direction the motor should move and the PWM power to be supplied
-      if(fabs(count) - fabs(count2) > 30 || fabs(count2) - fabs(count) > 30){
+      if(fabs(count) - fabs(count2) > 15 || fabs(count2) - fabs(count) > 15){
         if(abs(count) > abs(count2)){
             powerMotor1(dir1, 0);
             powerMotor2(dir2,64);
