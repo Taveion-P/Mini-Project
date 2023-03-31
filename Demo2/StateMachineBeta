@@ -122,11 +122,14 @@ float error2;
 //Constants for the controller (change to best fit the system)
 float const Kp1 = 1;
 float const Kd1 = 0;
-float const Ki1 = 0.5;
+float const Ki1 = 10;
 
 float const Kp2 = 1;
 float const Kd2 = 0;
-float const Ki2 = 0.5;
+float const Ki2 = 10;
+
+float derivativeError1 = 0;
+float derivativeError2 = 0;
 
 int state1 = 1;
 int state2 = 0;
@@ -194,52 +197,106 @@ void setup() {
 
 void loop() {
 
+  unsigned long currentmicros = micros();
+
+
+
+  if(currentmicros - previousmicros >= interval){
+
+    changeInTime = ((float)(currentmicros - previousmicros))/(1000000);
+    previousmicros = currentmicros;
+
+
+
 //STATE 1
 //The robot should begin by spinning in a 360 circle up until the camera detects the marker
 
-  if(state1 == 1){
+    if(state1 == 1){
 
     //check at the top whether or not we have received an angular position from the raspberry PI
     //
 
+      count1 = 0;
+      count2 = 0;
+      targetAngularPosition1 = 360;
+      targetAngularPosition2 = 360;
 
 
+      currentAngularPosition1 = toRadians(count1);
+      currentAngularPosition2 = toRadians(count2);
+
+      error1 = targetAngularPosition1 - currentAngularPosition1;
+      error2 = targetAngularPosition2 - currentAngularPosition2;
+
+      if(changeInTime > 0){
+        derivativeError1 = (error1 - previousError1)/changeInTime);
+        derivativeError2 = (error2 - previousError2)/changeInTime);
+      }
+
+      if(currentAngularPosition1 < 0.75*targetAngularPosition1){
+        integralError1 = 0;
+        integralError2 = 0;
+      }
+
+      integralError1 = integralError1 + error1*changeInTime;
+      integralError2 = integralError2 + error2*changeInTime;
+
+      ut1 = Kp1*error1 + Ki1*integralError1;
+      ut2 = Kp2*error2 + Ki2*integralError2;
+      
+      pwr1 = fabs(ut1*255);
+      pwr2 = fabs(ut2*255);
+
+      if(pwr1 > 20){
+        pwr1 = 20;
+      }
+      if(pwr2 > 20){
+        pwr2 = 20;
+      }
+      dir1 = 1;
+      dir2 = 1;
+
+      if(ut1 < 0){
+        dir1 = -1;
+      }
+      if(ut2 < 0){
+        dir2 = -1;
+      }
+
+      powerMotor1(dir1, pwr1);
+      powerMotor2(dir2, pwr2);
 
 
+      //if the state should be changed (camera has detected the pi STOP STATE 1 And enter STATE 2)
+
+      
 
 
-
-
-
-
-
-
-
-  }
+     }
 
 //the second state should be entered when the camera detects the marker and is able to send the arduino an angle to rotate to
 //while in this state the robot will rotate so that the camera is directly facing the marker
 
-  else if(state2 == 1){
+    else if(state2 == 1){
 
 
 
 
-  }
+    }
 
 
 //the third state will be entered once the robot has finished turning to the specified angle from the camera.
 //while in this state the robot will move forward until it has reaached the specified distance in ft received from the camera.
-  else if(state3 == 1){
+    else if(state3 == 1){
+
+
+
+    }
+
 
 
 
   }
-
-
-
-
-
 
   }
 
