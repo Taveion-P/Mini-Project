@@ -72,8 +72,9 @@ double theta=0;
 byte angle = 0;
 byte distance = 0;
 byte quadrant = 0;
+byte decimalVal = 0;
 int trueAngle = 0;
-int trueDistance = 0;
+float trueDistance = 0;
 
 //setpoint that is read over i2c communcation that will tell the motor which position to move to. (will range from 1-4)
 byte setpoint = 0;
@@ -205,14 +206,14 @@ void setup() {
 void loop() {
   switch(currentState){
     case initial: //spin robot until it sees aruco marker
-      turnAngle(10);
-      if(trueAngle != 0){
+      turnAngle(1);
+      if(setpoint != 0){
         currentState = rotateToMarker;
       }
     break;
 
     case rotateToMarker:  //reached when camera detects marker
-      turnAngle(trueAngle);
+      turnAngle(setpoint);
       delay(5000);
       if(setpoint == 0){
         currentState = moveToMarker;
@@ -220,7 +221,7 @@ void loop() {
     break;
 
     case moveToMarker: //reached when robot is at correct angle of aruco marker
-      moveStraight(distance);
+      moveStraight(setpoint);
       currentState = final;
     break;
 
@@ -572,10 +573,9 @@ void turnAngle(double angle){
       error2 = targetAngularPosition2*rotations - currentAngularPosition2;
   
       //derivative of the error (not used or needed in this iteration)
-      if(changeInTime > 0){
-        derivativeError1 = (error1 - previousError1)/(changeInTime);
-        derivativeError2 = (error2 - previousError2)/(changeInTime);
-      }
+      derivativeError1 = (error1 - previousError1)/(changeInTime);
+      derivativeError2 = (error2 - previousError2)/(changeInTime);
+      
   
       //integral of the error
       if(currentAngularPosition1 >= 0.75*targetAngularPosition1){
@@ -673,6 +673,7 @@ void receiveData(int byteCount) {
   if (!Wire.read()) angle = Wire.read();
   if (!Wire.read()) quadrant = Wire.read();
   if (!Wire.read()) distance = Wire.read();
+  if (!Wire.read()) deimalVal = Wire.read();
 
   if (quadrant == 1 || quadrant == 4){
       trueAngle = -int(angle);
@@ -680,6 +681,7 @@ void receiveData(int byteCount) {
     trueAngle = int(angle);
   }
   
+  trueDistance = float(distance) + (float(decimalVal)/100.0);
   
 }
 
