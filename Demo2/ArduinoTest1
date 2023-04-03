@@ -155,7 +155,7 @@ void setup() {
 
   //define callbacks for i2c communication
   Wire.onReceive(receiveData);
-  Wire.onRequest(sendData);
+  //Wire.onRequest(sendData);
   Serial.println("Ready!");
 
 
@@ -205,14 +205,14 @@ void setup() {
 void loop() {
   switch(currentState){
     case initial: //spin robot until it sees aruco marker
-      turnAngle(1);
-      if(setpoint != 0){
+      turnAngle(10);
+      if(trueAngle != 0){
         currentState = rotateToMarker;
       }
     break;
 
     case rotateToMarker:  //reached when camera detects marker
-      turnAngle(setpoint);
+      turnAngle(trueAngle);
       delay(5000);
       if(setpoint == 0){
         currentState = moveToMarker;
@@ -220,7 +220,7 @@ void loop() {
     break;
 
     case moveToMarker: //reached when robot is at correct angle of aruco marker
-      moveStraight(setpoint);
+      moveStraight(distance);
       currentState = final;
     break;
 
@@ -572,9 +572,10 @@ void turnAngle(double angle){
       error2 = targetAngularPosition2*rotations - currentAngularPosition2;
   
       //derivative of the error (not used or needed in this iteration)
-      derivativeError1 = (error1 - previousError1)/(changeInTime);
-      derivativeError2 = (error2 - previousError2)/(changeInTime);
-      
+      if(changeInTime > 0){
+        derivativeError1 = (error1 - previousError1)/(changeInTime);
+        derivativeError2 = (error2 - previousError2)/(changeInTime);
+      }
   
       //integral of the error
       if(currentAngularPosition1 >= 0.75*targetAngularPosition1){
@@ -680,11 +681,6 @@ void receiveData(int byteCount) {
   }
   
   
-  Serial.print("Detection = ");
-  Serial.println(detection);
-  #if i2cdebug
-  Serial.println(" ");
-  #
 }
 
 // callback for sending data
