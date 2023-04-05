@@ -215,6 +215,7 @@ void loop() {
     break;
 
     case rotateToMarker:  //reached when camera detects marker
+      delay(10000);
       if(abs(trueAngle) <= 5){
         Serial.println("Angle Reached");
         currentState = moveToMarker;
@@ -222,7 +223,6 @@ void loop() {
       }else{
         Serial.println("at incorrect angle");
       }
-      delay(10000);
       Serial.println("Moving To TrueAngle");
       Serial.println(trueAngle);
       turnAngle(trueAngle);
