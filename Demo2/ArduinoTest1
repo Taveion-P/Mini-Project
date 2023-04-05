@@ -1,5 +1,5 @@
 //Team Super Awesome Mega Cool Mini Project
-//3/31/2023
+//4/5/2023
 
 //include Wire.h and address for easy i2c communication between the arduino and pi
 #include <Wire.h>
@@ -131,11 +131,11 @@ float error2;
 //Constants for the controller (change to best fit the system)
 float const Kp1 = 1;
 float const Kd1 = 0;
-float const Ki1 = 10;
+float const Ki1 = 5;
 
 float const Kp2 = 1;
 float const Kd2 = 0;
-float const Ki2 = 10;
+float const Ki2 = 5;
 
 enum states {
     initial, //spin robot until it sees aruco marker
@@ -194,7 +194,7 @@ void setup() {
   time2=micros();
 
   //prints out the starting position values and time
-  output();   
+  //output();   
 
   //main code to make Jopherie movtryne in a certain direction and/or angle
 }
@@ -206,22 +206,33 @@ void setup() {
 void loop() {
   switch(currentState){
     case initial: //spin robot until it sees aruco marker
-      turnAngle(1);
-      if(setpoint != 0){
+      turnAngle(10);
+      Serial.println("scanning");
+      Serial.println(trueAngle);
+      Serial.println(angle);
+      if(trueAngle != 0){
         currentState = rotateToMarker;
       }
     break;
 
     case rotateToMarker:  //reached when camera detects marker
-      turnAngle(setpoint);
-      delay(5000);
-      if(setpoint == 0){
+      if(abs(trueAngle) < 5){
+        Serial.println("");
+        currentState = moveToMarker;
+      }
+      delay(10000);
+      turnAngle(trueAngle);
+      delay(10000);
+      Serial.println(trueAngle);
+      if(abs(trueAngle) < 5){
+        Serial.println("");
         currentState = moveToMarker;
       }
     break;
 
     case moveToMarker: //reached when robot is at correct angle of aruco marker
-      moveStraight(setpoint);
+      Serial.println(trueDistance);
+      moveStraight(trueDistance);
       currentState = final;
     break;
 
@@ -273,6 +284,7 @@ void A_ISR2(){
 }
 
 void output() {
+  /*
   //grabs the new current theta position for each wheel in radians
   thetaLeftNew = toRadians(count);
   thetaRightNew = toRadians(count2);
@@ -308,14 +320,16 @@ void output() {
   //Serial.print(posY,3);
   //Serial.print("\t"); 
   //Serial.print(theta,3);
-  //Serial.print("\t");*/
+  //Serial.print("\t");
+  
   Serial.print(count);
   Serial.print("\t");  
   Serial.print(count2);
   Serial.print("\t"); 
 //  Serial.print(toRadians(count2));
 //  Serial.print("\t");
-  
+
+  */
 }
 
 double toRadians(int count){
@@ -486,14 +500,14 @@ void moveStraight(double distance){
       previousError2 = error2;
   
       //outputs serveral values for debugging and simulation needs.
-      output();
-      Serial.print(error1);
-      Serial.print("\t");
-      Serial.print(error2);
-      Serial.print("\t");
-      Serial.print(pwr1);
-      Serial.print("\t");
-      Serial.println(pwr2);
+//      output();
+//      Serial.print(error1);
+//      Serial.print("\t");
+//      Serial.print(error2);
+//      Serial.print("\t");
+//      Serial.print(pwr1);
+//      Serial.print("\t");
+//      Serial.println(pwr2);
   
       //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
       //in the case that it has exceeded the sampling rate print an error
@@ -573,20 +587,21 @@ void turnAngle(double angle){
       error2 = targetAngularPosition2*rotations - currentAngularPosition2;
   
       //derivative of the error (not used or needed in this iteration)
-      derivativeError1 = (error1 - previousError1)/(changeInTime);
-      derivativeError2 = (error2 - previousError2)/(changeInTime);
-      
+      if(changeInTime > 0){
+        derivativeError1 = (error1 - previousError1)/(changeInTime);
+        derivativeError2 = (error2 - previousError2)/(changeInTime);
+      }
   
       //integral of the error
-      if(currentAngularPosition1 >= 0.75*targetAngularPosition1){
+      //if(currentAngularPosition1 >= 0.75*targetAngularPosition1){
         integralError1 = integralError1 + error1*changeInTime;
         integralError2 = integralError2 + error2*changeInTime;
-      }
-      else{
-        integralError1 = 0;
-        integralError2 = 0;
-      }
-  
+     // }
+//      else{
+//        integralError1 = 0;
+//        integralError2 = 0;
+//      }
+//  
       //computation of the integral and derivative terms u(t) using the previously defined values
       ut1 = Kp1*error1 + Ki1*integralError1 + Kd1*derivativeError1;
       ut2 = Kp2*error2 + Ki2*integralError2 + Kd2*derivativeError2;
@@ -634,14 +649,14 @@ void turnAngle(double angle){
       previousError2 = error2;
   
       //outputs serveral values for debugging and simulation needs.
-      output();
-      Serial.print(error1);
-      Serial.print("\t");
-      Serial.print(error2);
-      Serial.print("\t");
-      Serial.print(pwr1);
-      Serial.print("\t");
-      Serial.println(pwr2);
+//      output();
+//      Serial.print(error1);
+//      Serial.print("\t");
+//      Serial.print(error2);
+//      Serial.print("\t");
+//      Serial.print(pwr1);
+//      Serial.print("\t");
+//      Serial.println(pwr2);
   
       //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
       //in the case that it has exceeded the sampling rate print an error
@@ -653,7 +668,7 @@ void turnAngle(double angle){
       if(stationaryTime == 0 && abs(error1) <=0.1 && abs(error2) <= 0.1){
           stationaryTime = currentmicros;
           keepMoving = false;
-          Serial.print(stationaryTime);
+          //Serial.print(stationaryTime);
       }
       if(stationaryTime != 0 && currentmicros > stationaryTime+100000){
           keepMoving = false;
@@ -668,22 +683,30 @@ void turnAngle(double angle){
 }
 
 //function to recieve data from pi
-void receiveData(int byteCount) { 
-
-  if (!Wire.read()) angle = Wire.read();
-  if (!Wire.read()) quadrant = Wire.read();
-  if (!Wire.read()) distance = Wire.read();
-  if (!Wire.read()) decimalVal = Wire.read();
+void receiveData(int byteCount) {
+  if (Wire.available ()) Wire.read();
+  if (Wire.available ()) angle = Wire.read();
+  if (Wire.available()) quadrant = Wire.read();
+  if (Wire.available()) distance = Wire.read();
+  if (Wire.available()) decimalVal = Wire.read();
 
   if (quadrant == 1 || quadrant == 4){
-      trueAngle = -int(angle);
+      trueAngle = 0 -int(angle);
   } else {
     trueAngle = int(angle);
   }
   
   trueDistance = float(distance) + (float(decimalVal)/100.0);
-  
+
+  Serial.println("I2C");
+  Serial.print(byteCount);
+  Serial.println(" Bytes");
+  Serial.println(angle);
+  Serial.println(quadrant);
+  Serial.println(distance);
+  Serial.println(decimalVal);
 }
+
 
 // callback for sending data
 //void sendData(){
