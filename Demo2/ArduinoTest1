@@ -29,7 +29,7 @@
 //pin for a button that can reset the current motor position to be the starting zero position.
 #define resetPin 13
 
-#define maxPWM 128
+#define maxPWM 100
 #define minPWM 0
 //*****
 //creates global variables that will be used in the future.
@@ -69,7 +69,7 @@ double posX=0;
 double posY=0;
 double theta=0;
 
-byte angle = 0;
+byte sentAngle = 0;
 byte distance = 0;
 byte quadrant = 0;
 byte decimalVal = 0;
@@ -208,31 +208,41 @@ void loop() {
     case initial: //spin robot until it sees aruco marker
       turnAngle(10);
       Serial.println("scanning");
-      Serial.println(trueAngle);
-      Serial.println(angle);
+      //Serial.println(trueAngle);
       if(trueAngle != 0){
         currentState = rotateToMarker;
       }
     break;
 
     case rotateToMarker:  //reached when camera detects marker
-      if(abs(trueAngle) < 5){
-        Serial.println("");
+      if(abs(trueAngle) <= 5){
+        Serial.println("Angle Reached");
         currentState = moveToMarker;
+        break;
+      }else{
+        Serial.println("at incorrect angle");
       }
       delay(10000);
-      turnAngle(trueAngle);
-      delay(10000);
+      Serial.println("Moving To TrueAngle");
       Serial.println(trueAngle);
-      if(abs(trueAngle) < 5){
-        Serial.println("");
+      turnAngle(trueAngle);
+      delay(5000);
+      Serial.println(trueAngle);
+      Serial.println("Angle Reached");
+      currentState = moveToMarker;   
+      if(abs(trueAngle) <= 5){
+        Serial.println("Angle Reached");
         currentState = moveToMarker;
+        break;
+      }else{
+        Serial.println("at incorrect angle");
       }
     break;
 
     case moveToMarker: //reached when robot is at correct angle of aruco marker
+      Serial.println("Moving Forward");
       Serial.println(trueDistance);
-      moveStraight(trueDistance);
+      moveStraight(trueDistance-1);
       currentState = final;
     break;
 
@@ -519,7 +529,7 @@ void moveStraight(double distance){
       if(stationaryTime == 0 && abs(error1) <=0.1 && abs(error2) <= 0.1){
           stationaryTime = currentmicros;
           keepMoving = false;
-          Serial.print(stationaryTime);
+          //Serial.print(stationaryTime);
       }
       if(stationaryTime != 0 && currentmicros > stationaryTime+100000){
           keepMoving = false;
@@ -685,26 +695,26 @@ void turnAngle(double angle){
 //function to recieve data from pi
 void receiveData(int byteCount) {
   if (Wire.available ()) Wire.read();
-  if (Wire.available ()) angle = Wire.read();
+  if (Wire.available ()) sentAngle = Wire.read();
   if (Wire.available()) quadrant = Wire.read();
   if (Wire.available()) distance = Wire.read();
   if (Wire.available()) decimalVal = Wire.read();
 
   if (quadrant == 1 || quadrant == 4){
-      trueAngle = 0 -int(angle);
+      trueAngle = 0 + int(sentAngle);
   } else {
-    trueAngle = int(angle);
+    trueAngle = 0 - int(sentAngle);
   }
   
   trueDistance = float(distance) + (float(decimalVal)/100.0);
 
-  Serial.println("I2C");
-  Serial.print(byteCount);
-  Serial.println(" Bytes");
-  Serial.println(angle);
-  Serial.println(quadrant);
-  Serial.println(distance);
-  Serial.println(decimalVal);
+//  Serial.println("I2C");
+//  Serial.print(byteCount);
+//  Serial.println(" Bytes");
+//  Serial.println(sentAngle);
+//  Serial.println(quadrant);
+//  Serial.println(distance);
+//  Serial.println(decimalVal);
 }
 
 
