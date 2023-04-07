@@ -1,5 +1,5 @@
 //Team Super Awesome Mega Cool Mini Project
-//4/5/2023
+//4/7/2023
 
 //include Wire.h and address for easy i2c communication between the arduino and pi
 #include <Wire.h>
@@ -129,13 +129,13 @@ float error1;
 float error2;
 
 //Constants for the controller (change to best fit the system)
-float const Kp1 = 1;
-float const Kd1 = 0;
-float const Ki1 = 5;
+float Kp1 = 1;
+float Kd1 = 0;
+float Ki1 = 5;
 
-float const Kp2 = 1;
-float const Kd2 = 0;
-float const Ki2 = 5;
+float Kp2 = 1;
+float Kd2 = 0;
+float Ki2 = 5;
 
 enum states {
     initial, //spin robot until it sees aruco marker
@@ -215,8 +215,16 @@ void loop() {
     break;
 
     case rotateToMarker:  //reached when camera detects marker
-      delay(10000);
-      if(abs(trueAngle) <= 5){
+      Kp1 = 1;
+      Kd1 = 0;
+      Ki1 = 7.5;
+      
+      Kp2 = 1;
+      Kd2 = 0;
+      Ki2 = 7.5;
+      Serial.println(trueAngle);
+      delay(5000);
+      if(abs(trueAngle) <= 3){
         Serial.println("Angle Reached");
         currentState = moveToMarker;
         break;
@@ -226,23 +234,19 @@ void loop() {
       Serial.println("Moving To TrueAngle");
       Serial.println(trueAngle);
       turnAngle(trueAngle);
-      delay(5000);
-      Serial.println(trueAngle);
-      Serial.println("Angle Reached");
-      currentState = moveToMarker;   
-      if(abs(trueAngle) <= 5){
-        Serial.println("Angle Reached");
-        currentState = moveToMarker;
-        break;
-      }else{
-        Serial.println("at incorrect angle");
-      }
     break;
 
     case moveToMarker: //reached when robot is at correct angle of aruco marker
+      Kp1 = 1;
+      Kd1 = 0;
+      Ki1 = 5;
+      
+      Kp2 = 1;
+      Kd2 = 0;
+      Ki2 = 5;
       Serial.println("Moving Forward");
       Serial.println(trueDistance);
-      moveStraight(trueDistance-1);
+      moveStraight(trueDistance*0.95);
       currentState = final;
     break;
 
@@ -640,14 +644,14 @@ void turnAngle(double angle){
         dir2 = -1;
       
       //call the motor function and pass the direction the motor should move and the PWM power to be supplied
-      if(fabs(count) - fabs(count2) > 15 || fabs(count2) - fabs(count) > 15){
+      if(fabs(count) - fabs(count2) > 30 || fabs(count2) - fabs(count) > 30){
         if(abs(count) > abs(count2)){
             powerMotor1(dir1, 0);
-            powerMotor2(dir2,64);
+            powerMotor2(dir2,32);
         }
         if(abs(count) < abs(count2)){
-            powerMotor1(dir1, 64);
-            powerMotor2(dir2,64);
+            powerMotor1(dir1,32);
+            powerMotor2(dir2,0);
         }
       }else{
         powerMotor1(dir1, pwr1);
