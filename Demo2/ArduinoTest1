@@ -704,12 +704,14 @@ void receiveData(int byteCount) {
   if (Wire.available()) distance = Wire.read();
   if (Wire.available()) decimalVal = Wire.read();
 
+  //determines angle sign based off marker location in quadrants
   if (quadrant == 1 || quadrant == 4){
       trueAngle = 0 + int(sentAngle);
   } else {
     trueAngle = 0 - int(sentAngle);
   }
   
+  //putting together true distance value from values before decimal and values after decimal
   trueDistance = float(distance) + (float(decimalVal)/100.0);
 
 //  Serial.println("I2C");
