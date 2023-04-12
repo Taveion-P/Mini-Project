@@ -8,16 +8,7 @@ Display whether an aruco marker is detected on an LCD and display the angle betw
 
 Attached below is a breif descption of each file
 
-"2 motor movement": experimental code to move both motors
-
-"90 degree movement": code to turn the robot 90 degrees
-
-"Move10Feet": code to move 10 feet
-
-"MovingandGrooving": code to move a specifeid angle and distance
-
-"Python Code": code to controll LCD and aruco detection
-
-"movementWithDerivativeControl": code to move a specifed distance with added derivative contoller
-
-"rotateRobotDerivaitveControl": mode to rotate the rotate the robot with added derivative contorller
+"ArduinoTest1"  Main arduino code used to finish the tests. 
+"Demo2python"   Main demo 2 code for python to run on the pi
+"Moving And Grooving V2"  Updated code for the demo 1 code
+"StateMachineBeta"        state machine beta that roughly outlined the state machines used for the demo.
