@@ -29,7 +29,8 @@
 //pin for a button that can reset the current motor position to be the starting zero position.
 #define resetPin 13
 
-#define maxPWM 155
+#define maxPWMstraight 245
+#define maxPWM 255
 #define minPWM 0
 //*****
 //creates global variables that will be used in the future.
@@ -208,8 +209,8 @@ void loop() {
     case initial: //spin robot until it sees aruco marker
       //turnAngle(10);
       delay(50);
-      powerMotor1(1,64);
-      powerMotor2(1,64);
+      powerMotor1(1,128);
+      powerMotor2(1,128);
       //Serial.println("scanning");
       //Serial.println(trueAngle);
       if(trueAngle != 0){
@@ -228,8 +229,10 @@ void loop() {
       Kd2 = 0;
       Ki2 = 7.5;
       Serial.println(trueAngle);
-      delay(3000);
-      if(abs(trueAngle) <= 1){
+      delay(1000);
+      count = 0;
+      count2 = 0;
+      if(abs(trueAngle) <= 5){
         Serial.println("Angle Reached");
         currentState = moveToMarker;
         break;
@@ -248,10 +251,10 @@ void loop() {
       
       Kp2 = 1;
       Kd2 = 0;
-      Ki2 = 5;-
+      Ki2 = 5;
       Serial.println("Moving Forward");
       Serial.println(trueDistance);
-      moveStraight(trueDistance*0.89);
+      moveStraight(trueDistance);
       currentState = final;
     break;
 
@@ -421,14 +424,14 @@ void moveStraight(double distance){
 
   //power the motor with speed and direction!
   //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
-  pwr1 = fabs(ut1 * 100);
-  pwr2 = fabs(ut2 * 100);
+  pwr1 = fabs(ut1 * maxPWMstraight);
+  pwr2 = fabs(ut2 * maxPWMstraight);
   //pwr cannot exceed 255
 
-  if(pwr1 > 100)
-    pwr1 = 100;
-  if(pwr2 > 100)
-    pwr2 = 100;
+  if(pwr1 > maxPWMstraight)
+    pwr1 = maxPWMstraight;
+  if(pwr2 > maxPWMstraight)
+    pwr2 = maxPWMstraight;
   if(pwr1 < minPWM)
     pwr1 = minPWM;
   if(pwr2 < minPWM)
@@ -476,14 +479,14 @@ void moveStraight(double distance){
   
       //power the motor with speed and direction!
       //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
-      pwr1 = fabs(ut1 * 150);
-      pwr2 = fabs(ut2 * 150);
+      pwr1 = fabs(ut1 * maxPWMstraight);
+      pwr2 = fabs(ut2 * maxPWMstraight);
       //pwr cannot exceed 255
    
-      if(pwr1 > 150)
-        pwr1 = 150;
-      if(pwr2 > 150)
-        pwr2 = 150;
+      if(pwr1 > maxPWMstraight)
+        pwr1 = maxPWMstraight;
+      if(pwr2 > maxPWMstraight)
+        pwr2 = maxPWMstraight;
       if(pwr1 < minPWM)
         pwr1 = minPWM;
       if(pwr2 < minPWM)
@@ -698,7 +701,7 @@ void turnAngle(double angle){
   //delay 1 seconds before moving on and turn motors off
   powerMotor1(dir1, 0);
   powerMotor2(dir2, 0);
-  delay(1000);
+//  delay(1000);
 }
 
 //function to recieve data from pi
