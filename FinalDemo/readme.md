@@ -6,4 +6,4 @@ Spin the robot until the marker is detected. When the marker is detected, send t
 
 "Final PI Code"     Code running on the Raspberry Pi for ArUco code detection and telling the Arduino which marker to move to next.
 
-"Moving_And_Grooving_v3.ino"    The final demo arduino code which is capable of moving to multiple markers.
+"Moving_And_Grooving_v3.ino"    The final demo Arduino code which is capable of moving to multiple markers.
