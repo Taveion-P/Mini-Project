@@ -27,9 +27,9 @@
 #define i2cdebug 1
 
 //pin for a button that can reset the current motor position to be the starting zero position.
-#define resetPin 13
+#define donePin 11
 
-#define maxPWMstraight 245
+#define maxPWMstraight 200
 #define maxPWM 255
 #define minPWM 0
 //*****
@@ -139,11 +139,14 @@ float Kp2 = 1;
 float Kd2 = 0;
 float Ki2 = 5;
 
+int markerCount = 0;
+
 enum states {
     initial, //spin robot until it sees aruco marker
     rotateToMarker, //reached when camera detects marker
     moveToMarker, //reached when robot is at correct angle of aruco marker
-    final //final end state to stop and do nothing
+    final, //final end state to stop and do nothing
+    finalFinal  //the actual final state after Jopherie moves to all the markers
   };
   
 states currentState = initial;
@@ -164,7 +167,7 @@ void setup() {
 
   //defines the different pins on the Arduino as inputs to read the values of the encoder.
   //pin for a button that can reset the current motor position to be the starting zero position.
-  pinMode(resetPin, INPUT_PULLUP);
+  pinMode(donePin, OUTPUT);
   
   //pinmode for both motor encoders
   pinMode(CLK_A, INPUT);
@@ -209,9 +212,15 @@ void loop() {
   switch(currentState){
     case initial: //spin robot until it sees aruco marker
       //turnAngle(10);
+      if(trueAngle != 0){
+        currentState = rotateToMarker;
+        powerMotor1(1,0);
+        powerMotor2(1,0);
+        break;
+      }
       delay(50);
-      powerMotor1(1,128);
-      powerMotor2(1,128);
+      powerMotor1(1,64);
+      powerMotor2(1,64);
       //Serial.println("scanning");
       //Serial.println(trueAngle);
       if(trueAngle != 0){
@@ -230,10 +239,10 @@ void loop() {
       Kd2 = 0;
       Ki2 = 7.5;
       Serial.println(trueAngle);
-      delay(1000);
+      delay(1500);
       count = 0;
       count2 = 0;
-      if(abs(trueAngle) <= 5){
+      if(abs(trueAngle) <= 2){
         Serial.println("Angle Reached");
         currentState = moveToMarker;
         break;
@@ -261,13 +270,37 @@ void loop() {
     break;
 
     case final: //final state reverse backwards the same distance traveled forwards and then change to the initial state
-      Serial.println("Moving Backward");
-      Serial.println(-1*distanceToMarker);
-      moveStraight(-1*distanceToMarker);
+      //Serial.println("Moving Backward");
+      //Serial.println(-1*distanceToMarker);
+      
+      digitalWrite(donePin, HIGH);
+      delay(1000);
+      digitalWrite(donePin, LOW);
+      //delay(2000);
+      //moveStraight(-1*distanceToMarker);
       sentAngle = 0;
       quadrant = 0;
       distance = 0;
       decimalVal = 0;
+      trueAngle=0;
+      trueDistance=0;
+      delay(4000);
+
+      markerCount++;
+      if (markerCount >= 6) {
+        currentState = finalFinal;
+      }else{
+        currentState = initial;
+      }
+    break;
+     
+    case finalFinal:
+        powerMotor1(0,0);
+        powerMotor2(0,0);
+        delay(999999);
+    break;
+
+    
     default: //default is to go back to initial state
       currentState = initial;
     break;
@@ -364,7 +397,7 @@ void powerMotor2(int direction, int setPWM){
 void moveStraight(double distance){
   count =0;
   count2=0;
-  
+ 
   targetAngularPosition1 = -1*(distance/(5.8*PI/12.0))*2*PI;
   targetAngularPosition2 = -1*targetAngularPosition1;
 
@@ -399,25 +432,25 @@ void moveStraight(double distance){
 
   boolean keepMoving = true;
   long stationaryTime=0;
-  
+ 
   while(keepMoving){
     unsigned long currentmicros = micros();
-    
+   
     //using the given sampling rate only sample when the rate has occurred
     if (currentmicros - previousmicros >= interval) {
-      
+     
       //find the change in time in seconds
       changeInTime = ((float)(currentmicros - previousmicros))/(1000000);
       previousmicros = currentmicros;
-  
+ 
       //reads the current angular postion in radians
       currentAngularPosition1 = toRadians(count);
       currentAngularPosition2 = toRadians(count2);
-  
+ 
       //current ERROR (distance between desired pos and current pos)
       error1 = targetAngularPosition1 - currentAngularPosition1;
       error2 = targetAngularPosition2 - currentAngularPosition2;
-      
+     
       //derivative of the error (not used or needed in this iteration)
       if(changeInTime > 0){
         derivativeError1 = (error1 - previousError1)/(changeInTime);
@@ -428,15 +461,15 @@ void moveStraight(double distance){
         integralError1 = 0;
         integralError2 = 0;
       }
-      
+     
       //integral of the error
       integralError1 = integralError1 + error1*changeInTime;
       integralError2 = integralError2 + error2*changeInTime;
-  
+ 
       //computation of the integral and derivative terms u(t) using the previously defined values
       ut1 = Kp1*error1 + Ki1*integralError1;
       ut2 = Kp2*error2 + Ki2*integralError2;
-  
+ 
       //power the motor with speed and direction!
       //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
       pwr1 = fabs(ut1 * maxPWMstraight);
@@ -451,7 +484,7 @@ void moveStraight(double distance){
         pwr1 = minPWM;
       if(pwr2 < minPWM)
         pwr2 = minPWM;
-        
+       
       //set an initial direction for the motor to move
       dir1 = 1;
       dir2 = 1;
@@ -460,7 +493,7 @@ void moveStraight(double distance){
         dir1= -1;
       if(ut2 < 0)
         dir2 = -1;
-      
+     
       //call the motor function and pass the direction the motor should move and the PWM power to be supplied
       //ideally the motor counts should be exactly the same to be moving in a straight line
       //if the robot begins to veer off, then it should self correct by moving the motor that is behind by itself.
@@ -480,7 +513,7 @@ void moveStraight(double distance){
       //current error becomes previous error as the loop finishes
       previousError1 = error1;
       previousError2 = error2;
-  
+ 
       //outputs serveral values for debugging and simulation needs.
 //      output();
 //      Serial.print(error1);
@@ -490,7 +523,7 @@ void moveStraight(double distance){
 //      Serial.print(pwr1);
 //      Serial.print("\t");
 //      Serial.println(pwr2);
-  
+ 
       //at the end of our sampling check to ensure that the duration we have spent taking our sample has not exceeded our actual sample rate
       //in the case that it has exceeded the sampling rate print an error
       if(currentmicros - previousmicros >= interval){
@@ -506,7 +539,7 @@ void moveStraight(double distance){
       if(stationaryTime != 0 && currentmicros > stationaryTime+100000){
           keepMoving = false;
       }
-              
+             
     }
   }
   //delay 1 seconds before moving on and turn motors off
@@ -684,7 +717,7 @@ if (Wire.available()) decimalVal = Wire.read();
 //  Serial.println("I2C");
 //  Serial.print(byteCount);
 //  Serial.println(" Bytes");
-//  Serial.println(sentAngle);
+  Serial.println(sentAngle);
 //  Serial.println(quadrant);
 //  Serial.println(distance);
 //  Serial.println(decimalVal);
