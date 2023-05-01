@@ -31,7 +31,7 @@
 
 #define maxPWMstraight 200
 #define maxPWM 255
-#define minPWM 0
+#define minPWM 50
 //*****
 //creates global variables that will be used in the future.
 //*****
@@ -74,7 +74,7 @@ byte sentAngle = 0;
 byte distance = 0;
 byte quadrant = 0;
 byte decimalVal = 0;
-int trueAngle = 0;
+int trueAngle = 256;
 float trueDistance = 0;
 float distanceToMarker=0;
 
@@ -211,11 +211,13 @@ void setup() {
 void loop() {
   switch(currentState){
     case initial: //spin robot until it sees aruco marker
+      delay(50);
       //turnAngle(10);
-      if(trueAngle != 0){
+      if(trueAngle != 256){
         currentState = rotateToMarker;
         powerMotor1(1,0);
         powerMotor2(1,0);
+        Serial.println("Heree");
         break;
       }
       delay(50);
@@ -223,10 +225,11 @@ void loop() {
       powerMotor2(1,64);
       //Serial.println("scanning");
       //Serial.println(trueAngle);
-      if(trueAngle != 0){
+      if(trueAngle != 256){
         currentState = rotateToMarker;
         powerMotor1(1,0);
         powerMotor2(1,0);
+        Serial.println("There");
       }
     break;
 
@@ -242,7 +245,7 @@ void loop() {
       delay(1500);
       count = 0;
       count2 = 0;
-      if(abs(trueAngle) <= 2){
+      if(abs(trueAngle) <= 1){
         Serial.println("Angle Reached");
         currentState = moveToMarker;
         break;
@@ -265,7 +268,7 @@ void loop() {
       Serial.println("Moving Forward");
       distanceToMarker = trueDistance;
       Serial.println(distanceToMarker);
-      moveStraight(trueDistance);
+      moveStraight(trueDistance*0.9);
       currentState = final;
     break;
 
@@ -274,16 +277,16 @@ void loop() {
       //Serial.println(-1*distanceToMarker);
       
       digitalWrite(donePin, HIGH);
-      delay(1000);
-      digitalWrite(donePin, LOW);
-      //delay(2000);
-      //moveStraight(-1*distanceToMarker);
       sentAngle = 0;
       quadrant = 0;
       distance = 0;
       decimalVal = 0;
-      trueAngle=0;
+      trueAngle=256;
       trueDistance=0;
+      delay(1000);
+      digitalWrite(donePin, LOW);
+      //delay(2000);
+      //moveStraight(-1*distanceToMarker);
       delay(4000);
 
       markerCount++;
@@ -297,7 +300,7 @@ void loop() {
     case finalFinal:
         powerMotor1(0,0);
         powerMotor2(0,0);
-        delay(999999);
+        delay(999999999999999999);
     break;
 
     
@@ -397,7 +400,9 @@ void powerMotor2(int direction, int setPWM){
 void moveStraight(double distance){
   count =0;
   count2=0;
- 
+
+  int poop=0;
+  
   targetAngularPosition1 = -1*(distance/(5.8*PI/12.0))*2*PI;
   targetAngularPosition2 = -1*targetAngularPosition1;
 
@@ -474,6 +479,7 @@ void moveStraight(double distance){
       //we want the PWM to be our control signal u(t), since PWM is always between 0 and 255 take the abs(ut);
       pwr1 = fabs(ut1 * maxPWMstraight);
       pwr2 = fabs(ut2 * maxPWMstraight);
+      
       //pwr cannot exceed 255
    
       if(pwr1 > maxPWMstraight)
@@ -484,7 +490,11 @@ void moveStraight(double distance){
         pwr1 = minPWM;
       if(pwr2 < minPWM)
         pwr2 = minPWM;
-       
+
+      //Serial.println();
+      //Serial.println(pwr1);
+      //Serial.println(pwr2);
+      //Serial.println();
       //set an initial direction for the motor to move
       dir1 = 1;
       dir2 = 1;
@@ -503,7 +513,7 @@ void moveStraight(double distance){
             powerMotor2(dir2,64);
         }
         if(abs(count) < abs(count2)){
-            powerMotor1(dir1, 64);
+            powerMotor1(dir1,64);
             powerMotor2(dir2,64);
         }
       }else{
@@ -531,13 +541,11 @@ void moveStraight(double distance){
       }
 
       //waits untill the error is below a certain threshold to leave the loop to move onto the next action
-      if(stationaryTime == 0 && abs(error1) <=0.1 && abs(error2) <= 0.1){
-          stationaryTime = currentmicros;
-          keepMoving = false;
-          //Serial.print(stationaryTime);
-      }
-      if(stationaryTime != 0 && currentmicros > stationaryTime+100000){
-          keepMoving = false;
+      if(abs(error1) <=0.1 && abs(error2) <= 0.1){
+          poop++;
+          if(poop>=400){
+            keepMoving = false;
+          }
       }
              
     }
@@ -551,6 +559,8 @@ void moveStraight(double distance){
 void turnAngle(double angle){
   count = 0;
   count2= 0;
+
+  int poop=0;
   
   targetAngularPosition1 = degToRad(angle);
   targetAngularPosition2 = degToRad(angle);
@@ -680,13 +690,11 @@ void turnAngle(double angle){
       }
 
       //waits untill the error is below a certain threshold to leave the loop to move onto the next action
-      if(stationaryTime == 0 && abs(error1) <=0.07 && abs(error2) <= 0.07){
-          stationaryTime = currentmicros;
-          keepMoving = false;
-          //Serial.print(stationaryTime);
-      }
-      if(stationaryTime != 0 && currentmicros > stationaryTime+100000){
-          keepMoving = false;
+      if(abs(error1) <=0.1 && abs(error2) <= 0.1){
+          poop++;
+          if(poop>=250){
+            keepMoving = false;
+          }
       }
       
     }
